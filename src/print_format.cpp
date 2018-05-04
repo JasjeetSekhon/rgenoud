@@ -12,8 +12,6 @@
   http://sekhon.polisci.berkeley.edu
   <sekhon@berkeley.edu>
 
-  June 3, 2012
-
 */
 
 
@@ -54,7 +52,7 @@ long ReadPopulation(double **Data, long NewPopSize, long NewVars, FILE *fp, shor
     fint = fscanf(fp, "%s", ctmp);
     fint = fscanf(fp, " %d", &PopSize);
 
-    if(PrintLevel>0 & trip==0)
+    if( ((PrintLevel>0) & (trip==0)) )
       Rprintf( "Population Size: %d\n", PopSize); 
 
     fint = fscanf(fp, "%s", ctmp);     /* reads "Fit" */
@@ -68,7 +66,7 @@ long ReadPopulation(double **Data, long NewPopSize, long NewVars, FILE *fp, shor
     fint = fscanf(fp, "%s", ctmp);
     fint = fscanf(fp, " %d", &nvars);
 
-    if(PrintLevel>0 & trip==0)
+    if( ((PrintLevel>0) & (trip==0)) )
       Rprintf( "Number of Variables: %d\n", nvars); 
 
     if (trip==0) {

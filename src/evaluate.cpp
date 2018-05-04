@@ -12,8 +12,6 @@
   http://sekhon.berkeley.edu
   <sekhon@berkeley.edu>
 
-  June 27, 2013
-
 */
 
 #include "genoud.h"
@@ -784,7 +782,7 @@ void optimization(struct GND_IOstructure *Structure, VECTOR X,
 
   /* Interrupt setup.  Let's print a nice message to recover the best
      solution so far if at least generation 0 has been run */
-  if (PrintLevel > 0 & (strcmp(Structure->ProjectPath, "/dev/null")!=0))
+  if ( (PrintLevel > 0) & (strcmp(Structure->ProjectPath, "/dev/null")!=0) )
     setVar(install("interrupted"), ScalarLogical(1), Structure->rho);
 
   /*Assigning probability of survival for each of the agent, with the*/
@@ -1094,7 +1092,7 @@ void optimization(struct GND_IOstructure *Structure, VECTOR X,
               case 8:
 		/* JS Description: Local-Minimum Crossover */
                      /*Applying the eighth operator, homotopy (BFGS) */
-		if (j8 < P8 & (Structure->BFGSburnin >= 0) & (count_gener > Structure->BFGSburnin))
+		if ( (j8 < P8) & (Structure->BFGSburnin >= 0) & (count_gener > Structure->BFGSburnin) )
                       {
                         /*Find one parent for BFGS operator 1*/
                         first_live  = find_parent(live,pop_size);
@@ -1204,7 +1202,7 @@ void optimization(struct GND_IOstructure *Structure, VECTOR X,
 	}
 
       /* apply the bfgs to the best individual */
-      if (UseBFGS != 0 & (Structure->BFGSburnin >= 0) & (count_gener > Structure->BFGSburnin)) {
+      if ( (UseBFGS != 0) & (Structure->BFGSburnin >= 0) & (count_gener > Structure->BFGSburnin) ){
 	for (i=1; i<=nvars; i++)
 	  {
 	    bfgsoutX[i-1]=population[1][i];
@@ -3169,7 +3167,7 @@ void JaIntegerOptimization(struct GND_IOstructure *Structure, VECTOR X,
 
   /* Interrupt setup.  Let's print a nice message to recover the best
      solution so far if at least generation 0 has been run */
-  if (PrintLevel > 0 & (strcmp(Structure->ProjectPath, "/dev/null")!=0))
+  if ( (PrintLevel > 0) & (strcmp(Structure->ProjectPath, "/dev/null")!=0) )
     setVar(install("interrupted"), ScalarLogical(1), Structure->rho);
   
   /*Assigning probability of survival for each of the agent, with the*/
