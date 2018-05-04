@@ -1,0 +1,1465 @@
+\documentclass[nojss]{jss}
+
+\usepackage{amsmath}
+\usepackage{dcolumn}  
+
+%%My declarations
+\newcommand{\hlink}{\htmladdnormallink}
+\newcommand{\MyPerp}{\perp \! \! \! \perp}
+
+\newcommand{\e}{\text{e-}}
+
+\newcolumntype{C}{>{$}c<{$}}
+\newcolumntype{L}{>{$}l<{$}}
+\newcolumntype{R}{>{$}r<{$}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% declarations for jss.cls %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%% almost as usual
+\author{Walter R. Mebane, Jr. \\
+  University of Michigan 
+  \And
+  Jasjeet S. Sekhon \\
+  UC Berkeley} 
+
+%% for pretty printing and a nice hypersummary also set:
+\title{Genetic Optimization Using Derivatives:  The \pkg{rgenoud} Package for \proglang{R}}
+\Plaintitle{Genetic Optimization Using Derivatives:  The rgenoud Package for R}
+\Plainauthor{Walter R. Mebane, Jr., Jasjeet S. Sekhon} %% comma-separated
+\Shorttitle{\pkg{rgenoud}: Genetic Optimization  Using Derivatives in \proglang{R}}
+
+%% an abstract and keywords
+\Abstract{ This introduction to the \proglang{R} package \pkg{rgenoud}
+  is a modified version of \cite{MebaneJr.+Sekhon:2011}, published in
+  the \textit{Journal of Statistical Software}.  That version of the
+  introduction contains higher resolution figures.
+  
+  \code{genoud} is an \proglang{R} function that combines
+  evolutionary algorithm methods with a derivative-based
+  (quasi-Newton) method to solve difficult optimization problems.
+  \code{genoud} may also be used for optimization problems for which
+  derivatives do not exist.  \code{genoud} solves problems that are nonlinear
+  or perhaps even discontinuous in the parameters of the function to
+  be optimized.  When the function to be optimized (for
+  example, a log-likelihood) is nonlinear in the model's parameters,
+  the function will generally not be globally concave
+  and may have irregularities such as saddlepoints or discontinuities.
+  Optimization methods that rely on derivatives of the objective
+  function may be unable to find any optimum at all.  Multiple local
+  optima may exist, so that there is no guarantee that a
+  derivative-based method will converge to the global optimum.  On the
+  other hand, algorithms that do not use derivative information (such
+  as pure genetic algorithms) are for many problems needlessly poor at
+  local hill climbing.  Most statistical problems are regular in a
+  neighborhood of the solution.  Therefore, for some portion of the
+  search space, derivative information is useful.  The function
+  supports parallel processing on multiple CPUs on a single machine or
+  a cluster of computers.}
+
+\Keywords{genetic algorithm, evolutionary program, optimization, parallel computing, \proglang{R}}
+\Plainkeywords{genetic algorithm, evolutionary program, optimization, parallel computing, R} %% without formatting
+%% at least one keyword must be supplied
+
+%% publication information
+%% NOTE: This needs to filled out ONLY IF THE PAPER WAS ACCEPTED.
+%% If it was not (yet) accepted, leave them commented.
+\Volume{42}
+\Issue{11}
+%\Month{September}
+\Year{2011}
+\Submitdate{2007-02-11}
+\Acceptdate{2007-11-21}
+
+%% The address of (at least) one author should be given
+%% in the following format:
+\Address{
+  Walter R. Mebane, Jr.\\
+%  Professor\\
+  Department of Political Science\\
+  Department of Statistics\\
+  University of Michigan\\
+  Ann Arbor, MI 48109-1045\\
+  E-mail: \email{wmebane@umich.edu}\\
+  URL: \url{http://www.umich.edu/~wmebane} \\ [2ex]
+
+  Jasjeet S. Sekhon\\
+  Department of Political Science\\
+  Department of Statistics\\  
+ 210 Barrows Hall \#1950\\
+  UC Berkeley\\
+ Berkeley, CA 94720-1950\\
+  E-mail: \email{sekhon@berkeley.edu}\\
+  URL: \url{http://sekhon.berkeley.edu}
+}
+%% It is also possible to add a telephone and fax number
+%% before the e-mail in the following format:
+%% Telephone: +43/1/31336-5053
+%% Fax: +43/1/31336-734
+
+%% for those who use Sweave please include the following line (with % symbols):
+%% need no \usepackage{Sweave.sty}
+
+%% end of declarations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+\graphicspath{{Figures/}}
+
+\begin{document}
+\SweaveOpts{engine=R} 
+%\VignetteIndexEntry{Using genoud} 
+%\VignetteDepends{rgenoud} 
+%\VignetteKeywords{rgenoud}
+%\VignettePackage{rgenoud} 
+
+\section{Introduction}
+
+We developed the \proglang{R} package \pkg{rgenoud} to solve difficult
+optimization problems such as often arise when estimating nonlinear
+statistical models or solving complicated nonlinear, nonsmooth and
+even discontinuous functions.\footnote{The \pkg{rgenoud} software
+  package is available from the Comprehensive \proglang{R}
+  \citep{Rcore} Archive Network at
+  \url{http://CRAN.R-project.org/package=rgenoud}.}  Optimization
+difficulties often arise when the objective function (for instance,
+the log-likelihood) is a nonlinear function of the parameters. In such
+cases the function to be optimized is usually not globally concave.
+An objective function that is not globally concave may have multiple
+local optima, saddle points, boundary solutions or discontinuities.
+While the objective function for a statistical model is often concave
+in a neighborhood of the optimal solution, that neighborhood is often
+a small proportion of the parameter space of potential interest, and
+outside that neighborhood the function may be irregular.  In such
+cases, methods of optimization that depend entirely on derivatives can
+be unreliable and often are virtually unusable.  Newton-Raphson and
+quasi-Newton methods are among the commonly used optimization methods
+that rely completely on derivatives.  Such methods work well when the
+function to be optimized is regular and smooth over the domain of
+parameter values that is of interest, but otherwise the methods often
+fail \citep{GillMurrayWright1981}.  Even in models where such methods
+can be expected to work most of the time, resampling techniques such
+as the bootstrap \citep{EfronTibshirani1994} can generate resamples in
+which derivative-based optimization algorithms encounter severe
+difficulties.  This is unfortunate because the methods most frequently
+used for optimization in problems of statistical estimation are
+entirely based on derivatives.
+
+The \pkg{rgenoud} package has been used by wide variety of users and
+developers.  More than twelve \proglang{R} packages currently rely upon
+\pkg{rgenoud} including:  
+\pkg{anchors} \citep[analyzing survey data with
+anchoring vignettes,][]{Wand+King:2011,WandKingLau2007,KingWand2007};
+\pkg{BARD} \citep[automated redistricting,][]{Altman+McDonald:2011};
+\pkg{boolean} \citep[boolean binary response models,][]{braumoeller2003,BraumoellerGoodrichKline2006}; 
+\pkg{DiceOptim} \citep[kriging-based optimization for computer experiments,][]{DiceOptim}; 
+\pkg{FAiR} \citep[factor analysis,][]{goodrich.fair}; 
+\pkg{JOP} \citep[simultaneous optimization of multiple responses,][]{JOP}; 
+\pkg{KrigInv} \citep[kriging-based inversion,][]{KrigInv}; 
+\pkg{PKfit} \citep[data analysis in pharmacokinetics,][]{LeeLee2006};
+\pkg{Matching} \citep[propensity score and multivariate matching,][]{SekhonMatching,Sekhon:2011}; 
+\pkg{ivivc} \citep[in vitro-in vivo correlation modeling,][]{ivivc};
+\pkg{multinomRob} \citep[robust multinomial models,][]{MebaneSekhon.multinomRob,MebaneSekhon2004}; and
+\pkg{Synth} \citep[synthetic control group method for comparative case studies,][]{AbadieGardeazabal2003,synth2008,Abadie+Diamond+Hainmueller:2011}.
+
+We present in Section \ref{sec:examples} an example using benchmark functions
+taken from \citet{yao.liu.lin1999}, followed by an example motivated by the
+\code{multinomRob} package.  The benchmark suite includes functions that are
+high-dimensional, discontinuous or that have many local optima.  The
+\code{multinomRob} package robustly estimates overdispersed multinomial
+regression models and uses \pkg{rgenoud} to solve a least quartile difference
+(LQD) generalized S-estimator \citep{MebaneSekhon2004}.  The LQD is not a
+smooth function of the regression model parameters.  The function is
+continuous, but the parameter space is finely partitioned by nondifferentiable
+boundaries.
+
+In another paper in this volume, the \pkg{Matching} package and its
+use of \pkg{rgenoud} are described in detail \citep{Sekhon:2011}.
+\pkg{Matching} provides functions for multivariate and propensity
+score matching and for finding optimal covariate balance based on a
+genetic search algorithm implemented in \pkg{rgenoud}.  The search
+over optimal matches is discontinuous so no derivatives are
+used.\footnote{The \code{BFGS} option of \code{genoud} is set to
+  \code{FALSE}, and the ninth operator which depends on derivatives is
+  not used.}  The search also involves lexical
+optimization which is a unique feature implemented in
+\pkg{rgenoud}.\footnote{Lexical optimization is useful when there are
+  multiple fitness criteria; the parameters are chosen so as to
+  maximize fitness values in lexical order---i.e., the second fit criterion
+  is only considered if the parameters have the same fit for the
+ first.  See the \code{lexical} option and \citet{Sekhon:2011} for
+  details.  All of \code{genoud}'s options are described in the
+  \proglang{R} help file for the function.}
+
+%  If one wishes to use such a model,
+%significant optimization difficulties may need to be overcome.  For
+%example, the estimating functions of all of the following models are
+%not in general globally concave: models with multivariate qualitative
+%variables, censoring or endogenous switching
+%\citep{maddala1983,amemiya1985}; linear covariance structures
+%\citep{bollen1989}; models for durations or transitions with
+%unobserved heterogeneity \citep{HeckmanSinger1985,lancaster1990};
+%quasi-likelihood and extended quasi-likelihood models
+%\citep{McCullaghNelder1989} and systems based on such models
+%\citep{FahrmeirTutz1994}; and nonlinear simultaneous equation models
+%\citep{gallant1987}.  For such models, optimization methods driven
+%entirely by derivatives are often unreliable.  For some versions of
+%some of these models, algorithms such as EM that involve data
+%augmentation have been successfully applied to produce optimization
+%problems that derivative-based methods can solve
+%\citep[e.g.,][197]{lancaster1990}.
+
+The \pkg{rgenoud} package implements an updated and extended version
+of the \proglang{C} program \code{GENOUD} \citep{MebaneSekhon1997}
+described in \citep{SekhonMebane1998}.  The many improvements include
+among other things the interface with \proglang{R}, which includes the
+ability to optimize functions written in \proglang{R}, options to
+optimize both floating point and integer-valued parameters, the
+ability to optimize loss functions which return multiple fitness values
+(lexical optimization), the ability to call \code{genoud} recursively,
+the ability to have the optimizer evaluate fits only for new parameter
+values, and the ability to use multiple computers, CPUs or cores to
+perform parallel computations.
+
+The \pkg{rgenoud} program combines an evolutionary algorithm with a
+quasi-Newton method.  The quasi-Newton method is the
+Broyden-Fletcher-Goldfarb-Shanno (BFGS) method
+\citep[][119]{GillMurrayWright1981} implemented in \proglang{R}'s \code{optim}
+function.  When the BFGS is being used, our program offers the option of using
+either \pkg{rgenoud}'s built-in numerical derivatives (which are based on
+code taken from \citealt[][337--344]{GillMurrayWright1981}) or user-supplied
+analytical derivatives.\footnote{User supplied derivatives may be provides via
+  the \code{gr} option.}  Our program can also work without the BFGS, in which
+case no derivatives are needed and the optimizer will work even when the
+function is discontinuous.  The primary benefit from using derivatives is that
+the algorithm will then quickly find a local optimum when a current set of
+trial solution parameter values is in a smooth neighborhood of the local
+optimum point.  Appropriate use of the BFGS can make the algorithm converge to
+the global optimum much more quickly.  But premature or excessive use of the
+BFGS can prevent convergence to the global optimum.\footnote{The user can
+  control whether \code{genoud} uses the BFGS at all (via the \code{BFGS}
+  option), and if operators that use the BFGS are used (via the \code{P9}
+  option), how often they are used.}  As always, it is hazardous to rely on an
+optimizer's default settings.  Our program does not eliminate the need for
+judgment, testing and patience.
+
+As Gill, Murray and Wright observe, ``there is no guaranteed strategy that
+will resolve every difficulty'' \citep[285]{GillMurrayWright1981}.  In this article, we very briefly
+review the theory of random search algorithms that supports the assertion that
+\pkg{rgenoud} has a high probability of finding the global optimum when such
+exists.  And we present three examples of how to use the \code{genoud}
+function: to optimize a simple but fiendish scalar Normal mixture model; to
+minimize a suite of benchmark functions that have previously been used to test
+evolutionary programming optimization algorithms; and to optimize a version of
+the only intermittently differentiable LQD estimator.  Additional details on
+both the theory and performance of \code{genoud} can be found in our article
+that describes \code{GENOUD} \citep{SekhonMebane1998}.
+
+\section{Background on Genetic Optimization}
+
+An evolutionary algorithm (EA) uses a collection of heuristic rules to
+modify a population of trial solutions in such a way that each
+generation of trial values tends to be, on average, better than its
+predecessor.  The measure for whether one trial solution is better
+than another is the trial solution's fitness value.  In statistical
+applications, the fitness is a function of the summary statistic being
+optimized (e.g., the log-likelihood).  \pkg{rgenoud} works for cases
+in which a solution is a vector of floating-point or integer numbers
+that serve as the parameters of a function to be optimized.  The
+search for a solution proceeds via a set of heuristic rules, or
+\textit{operators}, each of which acts on one or more trial solutions
+from the current population to produce one or more trial solutions to
+be included in the new population. EAs do not require derivatives to
+exist or the function to be continuous in order find the global
+optimum.
+
+The EA in \pkg{rgenoud} is fundamentally a genetic algorithm (GA) in which
+the code-strings are vectors of numbers rather than bit
+strings, and the GA operators take special forms tuned for the
+floating-point or integer vector representation.  A GA uses a set of randomized
+genetic operators to evolve a finite population of finite code-strings
+over a series of generations
+\citep{holland1975,goldberg1989,GrefenstetteBaker1989}.  The operators
+used in GA implementations vary
+\citep{davis1991,FilhoTreleavenAlippi1994}, but in an analytical sense
+the basic set of operators can be defined as reproduction, mutation,
+crossover and inversion.  The variation in these operators across different
+GA implementations reflects
+the variety of codes best suited for different applications.
+Reproduction entails selecting a code-string with a probability that
+increases with the code-string's fitness value.  Crossover and
+inversion use pairs or larger sets of the selected code-strings to
+create new code-strings.  Mutation randomly changes the values of
+elements of a single selected code-string.
+
+Used in suitable combinations, the genetic operators tend to improve
+average fitness of each successive generation, though there is no
+guarantee that average fitness will improve between every pair of
+successive generations.  Average fitness may well decline.  But
+theorems exist to prove that parts of the trial solutions that have above average
+fitness values in the current population are sampled at an
+exponential rate for inclusion in the subsequent population
+\citep[][139--140]{holland1975}.  Each generation's population
+contains a biased sample of code-strings, so that a substring's
+performance in that population is a biased estimate of its average
+performance over all possible populations
+\citep{dejong1993,grefenstette1993}.
+
+The long-run properties of a GA may be understood by thinking of the GA as a
+Markov chain.  A state of the chain is a code-string population of the size
+used in the GA.  For code-strings of finite length and GA populations of
+finite size, the state space is finite.  If such a GA uses random reproduction
+and random mutation, all states always have a positive probability of
+occurring.  A finite GA with random reproduction and mutation is therefore
+approximately a finite and irreducible Markov
+chain.\footnote{\citet[][372--419]{feller1970} and
+  \citet[][107--142]{billingsley1986} review the relevant properties of Markov
+  chains.  The randomness in an actual GA depends on the performance of
+  pseudorandom number generators.  This and the limitations of floating point
+  arithmetic mean it is not literally true that an actual GA has a positive
+  probability of reaching any state from any other state, and some states may
+  in fact not be reachable from a given set of initial conditions.}  An
+irreducible, finite Markov chain converges at an exponential rate to a unique
+stationary distribution \citep[][128]{billingsley1986}.  This means that the
+probability that each population occurs rapidly converges to a constant,
+positive value.  \citet{NixVose1992} and 
+\citet{vose1993} use a Markov chain model to show that in a GA where the
+probability that each code-string is selected to reproduce is proportional to
+its observed fitness, the stationary distribution strongly emphasizes
+populations that contain code-strings that have high fitness values.  They
+show that asymptotic in the population size---i.e., in the limit for a series
+of GAs with successively larger populations---populations that have suboptimal
+average fitness have probabilities approaching zero in the stationary
+distribution, while the probability for the population that has optimal
+average fitness approaches one.  If $k>1$ populations have optimal average
+fitness, then in the limiting stationary distribution the probability for each
+approaches $1/k$.
+
+The theoretical results of Nix and Vose imply that a GA's success as an
+optimizer depends on having a sufficiently large population of code-strings.
+If the GA population is not sufficiently large, then the Markov chain that the
+GA approximately implements is converging to a stationary distribution in
+which the probabilities of optimal and suboptimal states are not sharply
+distinguished.  Suboptimal populations can be as likely to occur as optimal
+ones.  If the stationary distribution is not favorable, the run time in terms
+of generations needed to produce an optimal code-string will be excessive.
+For all but trivially small state spaces, an unfavorable stationary
+distribution can easily imply an expected running time in the millions of
+generations.  But if the stationary distribution strongly emphasizes optimal
+populations, relatively few generations may be needed to find an optimal
+code-string.  In general, the probability of producing an optimum in a fixed
+number of generations tends to increase with the GA population size.
+
+\begin{table}
+\begin{center}
+  \line(1,0){450}
+\end{center}
+\begin{enumerate}
+\item[\code{P1}] Cloning.  Copy $\mathbf{X}_{t}$ into the next generation,
+  $\mathbf{X}_{t+1}$. 
+\item[\code{P2}] Uniform Mutation.  At random choose $i\in\mathbf{N}$.  Select a value
+  $\tilde{x}_i \sim U(\underline{x}_i, \overline{x}_i)$.  Set
+  $X_i=\tilde{x}_i$.  
+\item[\code{P3}] Boundary Mutation.  At random choose $i\in\mathbf{N}$.  Set either
+  $X_i=\underline{x}_i$ or $X_i=\overline{x}_i$, with probability $1/2$ of
+  using each value.  
+\item[\code{P4}] Non-uniform Mutation.  At random choose $i\in\mathbf{N}$.  Compute
+  $p = (1-t/T)^B u$, where $t$ is the current generation number, $T$ is the
+  maximum number of generations, $B>0$ is a tuning parameter and $u \sim
+  U(0,1)$.  Set either $X_i=(1-p)x_i + p\underline{x}_i$ or $X_i=(1-p)x_i +
+  p\overline{x}_i$, with probability $1/2$ of using each value.    
+\item[\code{P5}] Polytope Crossover.  Using $m=\max(2,n)$ vectors
+  $\mathbf{x}$ from the current population and $m$ random numbers
+  $p_j\in(0,1)$ such that $\sum_{j=1}^m p_j = 1$, set $\mathbf{X} =
+  \sum_{j=1}^m p_j \mathbf{x}_j$. 
+\item[\code{P6}] Simple Crossover.  Choose a single integer $i$ from $\mathbf{N}$.
+  Using two parameter vectors, $\mathbf{x}$ and $\mathbf{y}$, 
+  set $X_i = p x_i + (1-p) y_i$ and $Y_i = p y_i + (1-p)
+  x_i$, where $p\in(0,1)$ is a fixed number. 
+\item[\code{P7}] Whole Non-uniform Mutation.  Do non-uniform mutation for
+  all the elements of $\mathbf{X}$.
+\item[\code{P8}] Heuristic Crossover.  Choose $p \sim U(0,1)$.  Using two parameter
+  vectors, $\mathbf{x}$ and $\mathbf{y}$, compute $\mathbf{z} =
+  p(\mathbf{x} - \mathbf{y}) + \mathbf{x}$.  If $\mathbf{z}$ satisfies
+  all constraints, use it.  Otherwise choose another $p$ value and repeat.
+  Set $\mathbf{z}$ equal to the better of $\mathbf{x}$ and $\mathbf{y}$ if
+  a satisfactory mixed $\mathbf{z}$ is not found by a preset number of
+  attempts.  In this fashion produce two $\mathbf{z}$ vectors.  
+\item[\code{P9}] Local-minimum Crossover.  Choose $p \sim U(0,1)$.
+  Starting with $\mathbf{x}$, run BFGS optimization up to a preset
+  number of iterations to produce $\mathbf{\tilde{x}}$.  Compute
+  $\mathbf{z} = p\mathbf{\tilde{x}} + (1-p)\mathbf{x}$.  If
+  $\mathbf{z}$ satisfies boundary constraints, use it.  Otherwise
+  shrink $p$ by setting $p = p/2$ and recompute $\mathbf{z}$.  If a
+  satisfactory $\mathbf{z}$ is not found by a preset number of
+  attempts, return $\mathbf{x}$.  This operators is extremely
+  computationally intensive, use sparingly. 
+\end{enumerate}
+
+\begin{flushleft}
+  Notation: \\ [2ex]
+  $\mathbf{X} =\begin{bmatrix}X_1,\dots,X_n\end{bmatrix}$ is the
+  vector of $n$ parameters $X_i$.  $\underline{x}_i$ is the lower
+  bound and $\overline{x}_i$ is the upper bound on values for $X_i$.
+  $x_i$ is the current value of $X_i$, and $\mathbf{x}$ is the current
+  value of $\mathbf{X}$.  $\mathbf{N} = \{1,\dots,n\}$.  $p \sim
+  U(0,1)$ means that $p$ is drawn from the uniform distribution on the
+  $[0,1]$ interval.
+\end{flushleft}
+  \caption{`genoud' Operators. Adapted from \citet{SekhonMebane1998}.}
+\label{tab:operators}
+\begin{center}
+  \line(1,0){450}
+\end{center}
+\end{table}
+
+The evolutionary algorithm in \pkg{rgenoud} uses nine operators that
+are listed in Table~\ref{tab:operators}.  The operators extend and
+modify a set of operators used in \code{GENOCOP}
+\citep{MichalewiczSwaminathanLogan1993, Michalewicz1992}.  The
+operators are numbered using syntax matching that used to refer to
+them by \pkg{rgenoud}.  The \textit{cloning} operator simply makes
+copies of the best trial solution in the current generation
+(independent of this operator, \pkg{rgenoud} always retains one
+instance of the best trial solution).  The \textit{uniform mutation},
+\textit{boundary mutation} and \textit{non-uniform mutation} operators
+act on a single trial solution.  Uniform mutation changes one
+parameter in the trial solution to a random value uniformly
+distributed on the domain specified for the parameter.  Boundary
+mutation replaces one parameter with one of the bounds of its domain.
+Non-uniform mutation shrinks one parameter toward one of the bounds,
+with the amount of shrinkage decreasing as the generation count
+approaches the specified maximum number of generations.  \textit{Whole
+  non-uniform mutation} does non-uniform mutation for all the
+parameters in the trial solution.  \textit{Heuristic crossover} uses
+two trial solutions to produce a new trial solution located along a
+vector that starts at one trial solution and points away from the
+other one.  \textit{Polytope crossover} (inspired by simplex search,
+\citealt[][94--95]{GillMurrayWright1981}) computes a trial solution
+that is a convex combination of as many trial solutions as there are
+parameters.  \textit{Simple crossover} computes two trial solutions
+from two input trial solutions by swapping parameter values between
+the solutions after splitting the solutions at a randomly selected
+point.  This operator can be especially effective if the ordering of
+the parameters in each trial solution is consequential.
+\textit{Local-minimum crossover} computes a new trial solution in two
+steps: first it does a preset number of BFGS iterations starting from
+the input trial solution; then it computes a convex combination of the
+input solutions and the BFGS iterate.
+
+
+\section{Examples}
+\label{sec:examples}
+
+The only function in the \pkg{rgenoud} package is \code{genoud}.  The
+interface of this function is similar to that of the \code{optim}
+function in \proglang{R}.  But the function has many additional
+arguments that control the behavior of the evolutionary algorithm.
+
+\subsection{Asymmetric Double Claw:}
+Our first example, which we also studied in \citet{SekhonMebane1998}, is a
+normal mixture called the Asymmetric Double Claw (ADC).  We plot the function
+in Figure~\ref{fig:mixture1}.
+\begin{figure}
+  \caption{Normal Mixture: Asymmetric Double Claw}
+  \vspace{-.5in}
+  \label{fig:mixture1}
+  \begin{center}
+    \includegraphics{fig1.pdf}
+  \end{center}
+  \vspace{-.7in}
+\end{figure}
+Mathematically, this mixture is defined as
+\begin{eqnarray}
+  \label{eq:adclaw}
+  f_{\mathrm{ADC}} & =
+  \sum_{m=0}^{1} \frac{46}{100} \mathrm{N}\left(2m-1,\frac{2}{3}\right) +
+  \sum_{m=1}^{3} \frac{1}{300} \mathrm{N}\left(\frac{-m}{2},\frac{1}{100}\right) +
+  \sum_{m=1}^{3} \frac{7}{300} \mathrm{N}\left(\frac{m}{2},\frac{7}{100}\right), 
+\end{eqnarray}
+where N is the normal density.
+
+The asymmetric double claw is difficult to maximize because there are
+many local solutions.  There are five local maxima in Figure
+\ref{fig:mixture1}.  Standard derivative-based optimizers would
+simply climb up the hill closest to the starting value.
+
+To optimize this normal mixture we must first create a function for it
+<<eval=true,results=hide>>= 
+    claw <- function(xx) {
+     x <- xx[1]
+      y <- (0.46*(dnorm(x,-1.0,2.0/3.0) + dnorm(x,1.0,2.0/3.0)) +
+      (1.0/300.0)*(dnorm(x,-0.5,.01) + dnorm(x,-1.0,.01) + dnorm(x,-1.5,.01)) +
+     (7.0/300.0)*(dnorm(x,0.5,.07) + dnorm(x,1.0,.07) + dnorm(x,1.5,.07))) 
+      return(y)
+    }
+@ 
+And we now make a call to \pkg{rgenoud} using this function:
+<<eval=true,results=hide>>= 
+library("rgenoud")
+claw1   <- genoud(claw, nvars=1, max=TRUE, pop.size=3000)
+@ 
+
+The first argument of \code{genoud} is the function to be optimized.  The first
+argument of that function must be the vector of parameters over which
+optimizing is to occur.  Generally, the function should return a
+scalar result.\footnote{The function to be optimized may return a
+  vector if one wishes to do lexical optimization.  Please see
+  the \code{lexical} option to \code{genoud}.}  The second argument of \code{genoud} in this example
+(\code{nvars}) is 
+the number of variables the function to be optimized takes.
+The third argument, \code{max=TRUE}, tells
+\code{genoud} to maximize the function instead of its default behavior
+which is to minimize.
+
+The fourth option \code{pop.size} controls the most important part
+of the evolutionary algorithm, the population size.  This is the
+number of individuals \code{genoud} uses to solve the optimization
+problem.  As noted in the theoretical discussion, the theorems related
+to evolutionary algorithms are asymptotic in the population size so
+larger is generally better but obviously takes longer.  The maximum
+solution of the double claw density is reliably found by \code{genoud}
+even using the default value of \code{pop.size=1000}.
+Reliability does increase as the \code{pop.size} is made larger.
+Unfortunately, because of the stochastic nature of the algorithm, it
+is impossible to generally answer the question of what is the best
+population size to use.
+
+Other options determine the maximum number of generations the evolutionary
+algorithm computes.  These options are \code{max.generations},
+\code{wait.generations} and \code{hard.generation.limit}.  The specified
+termination point also affects how some of the operators perform: the two
+non-uniform mutation operators introduce smaller ranges of variation in the
+trial solutions as the generation count approaches the specified
+\code{max.generations} value.  There are many more options that can be used
+to fine-tune the behavior of the algorithm.
+
+The output printed by \code{genoud} is controlled by a \code{print.level}
+argument.  The default value, \code{print.level=2}, produces relatively
+verbose output that gives extensive information about the set of operators
+being used and the progress of the optimization.  Normally \proglang{R}
+conventions would suggest setting the default to be \code{print.level=0},
+which would suppress output to the screen, but because \code{genoud} runs may
+take a long time, it can be important for the user to receive some feedback to
+see the program has not died and to be able to see where the program got stuck
+if it eventually fails to make adequate progress.
+
+The output printed by the preceding invocation of \code{genoud}, which uses
+the default value for a \code{print.level} argument, is as follows.
+\begin{CodeChunk}
+  \begin{CodeOutput}
+Fri Feb  9 19:33:42 2007
+Domains:
+ -1.000000e+01   <=  X1   <=    1.000000e+01 
+
+Data Type: Floating Point
+Operators (code number, name, population) 
+        (1) Cloning...........................  372
+        (2) Uniform Mutation..................  375
+        (3) Boundary Mutation.................  375
+        (4) Non-Uniform Mutation..............  375
+        (5) Polytope Crossover................  375
+        (6) Simple Crossover..................  376
+        (7) Whole Non-Uniform Mutation........  375
+        (8) Heuristic Crossover...............  376
+        (9) Local-Minimum Crossover...........  0
+
+HARD Maximum Number of Generations: 100
+Maximum Nonchanging Generations: 10
+Population size       : 3000
+Convergence Tolerance: 1.000000e-03
+
+Using the BFGS Derivative Based Optimizer on the Best Individual Each Generation.
+Checking Gradients before Stopping.
+Using Out of Bounds Individuals.
+
+Maximization Problem.
+GENERATION: 0 (initializing the population)
+Fitness value... 4.112017e-01
+mean............ 4.990165e-02
+variance........ 9.708147e-03
+#unique......... 3000, #Total UniqueCount: 3000
+var 1:
+best............ 9.966758e-01
+mean............ 3.453097e-02
+variance........ 3.373681e+01
+
+GENERATION: 1
+Fitness value... 4.113123e-01
+mean............ 2.237095e-01
+variance........ 2.566140e-02
+#unique......... 1858, #Total UniqueCount: 4858
+var 1:
+best............ 9.995043e-01
+mean............ 4.615946e-01
+variance........ 7.447887e+00
+
+[...]
+
+GENERATION: 10
+Fitness value... 4.113123e-01
+mean............ 2.953888e-01
+variance........ 2.590842e-02
+#unique......... 1831, #Total UniqueCount: 21708
+var 1:
+best............ 9.995033e-01
+mean............ 8.403935e-01
+variance........ 5.363241e+00
+
+GENERATION: 11
+Fitness value... 4.113123e-01
+mean............ 2.908561e-01
+variance........ 2.733896e-02
+#unique......... 1835, #Total UniqueCount: 23543
+var 1:
+best............ 9.995033e-01
+mean............ 8.084638e-01
+variance........ 6.007372e+00
+
+'wait.generations' limit reached.
+No significant improvement in 10 generations.
+
+Solution Fitness Value: 4.113123e-01
+
+Parameters at the Solution (parameter, gradient):
+
+ X[ 1] :        9.995033e-01    G[ 1] : -6.343841e-09
+
+Solution Found Generation 1
+Number of Generations Run 11
+
+Fri Feb  9 19:33:45 2007
+Total run time : 0 hours 0 minutes and 3 seconds
+  \end{CodeOutput}
+\end{CodeChunk}
+
+%DESCRIBE OUTPUT
+
+After printing the date and time of the run, the program prints the domain of
+values it is allowing for each parameter of the function being optimized.  In
+this case the default domain values are being used.  Naturally it is important
+to specify domains wide enough to include the solution.  In practice with
+highly nonlinear functions it is often better to specify domains that are
+relatively wide than to have domains that narrowly and perhaps even correctly
+bound the solution.  This surprising behavior reflects the fact with a highly
+nonlinear function, a point that is close to the solution in the sense of
+simple numerical proximity may not be all that close in the sense of there
+being a short feasible path to get to the solution.
+
+Next the program prints the Data Type.  This indicates whether the parameters
+of the function to be optimized are being treated as floating point numbers or
+integers.  For more information about this, see the \code{data.type.int}
+argument.
+
+The program then displays the number of operators being used, followed by the
+values that describe the other characteristics set for this particular run:
+the maximum number of generations, the population size and the tolerance value
+to be used to determine when the parameter values will be deemed to have
+converged.
+
+The output then reports whether BFGS optimization will be applied to the best
+trial solution produced by the operators in each generation.  For problems
+that are smooth and concave in a neighborhood of the global optimum, using the
+BFGS in this way can help \code{genoud} quickly converge once the best trial
+solution is in the correct neighborhood.  This run of \code{genoud} will also
+compute the gradient at the best trial solution before stopping.  In fact this
+gradient checking is used as a convergence check.  The algorithm will not
+start counting its final set of generations (the \code{wait.generations})
+until each element of the gradient is smaller in magnitude than the
+convergence tolerance.  Gradients are never used and BFGS optimization is not
+used when the parameters of the function to be optimized are integers.
+
+The next message describes how strictly \code{genoud} is enforcing the
+boundary constraints specified by the domain values.  By default
+(\code{boundary.enforcement=0}), the trial solutions are allowed to wander
+freely outside the boundaries.  The boundaries are used only to define domains
+for those operators that use the boundary information.  Other settings of the
+\code{boundary.enforcement} argument induce either more stringent or
+completely strict enforcement of the boundary constraints.  Notice that the
+boundary constraints apply to the parameters one at a time.  To enforce
+constraints that are defined by more complicated functional or data-dependent
+relationships, one can include an appropriate penalty function as part of the
+definition of the function to be optimized, letting that function define an
+extremely high (if minimizing) or low (if maximizing) value to be returned if
+the desired conditions are violated.
+
+After reporting whether it is solving a minimization or a maximization problem,
+\code{genoud} reports summary statistics that describe the distribution of the
+fitness value and the parameter values across the trial solutions at the end
+of each generation.  In the default case where \code{genoud} is keeping track
+of all the distinct solutions considered over the whole course of the
+optimizing run, these generational reports also include a report of the number
+of unique trial solutions in the current population and the number of unique
+solutions ever considered.  The benefit of keeping track of the solutions is
+to avoid repeatedly evaluating the function being optimized for the
+identical set of parameter values.  This can be an important efficiency when
+function evaluations are expensive, as they can be in statistical applications
+where the data are extensive.  This tracking behavior is controlled by the
+\code{MemoryMatrix} argument.
+
+Upon convergence, or when the hard maximum generation limit is reached, the
+program prints the fitness value at the best trial solution and that
+solution's parameter values.  In this case the solution was found after one
+generation.  While the Asymmetric Double Claw might present a difficult
+challenge for a gradient-based optimizer that uses only local hill climbing,
+it is an almost trivially simple problem for \code{genoud}.
+
+\subsection{Benchmark Functions:}
+The second example is a suite of 23 benchmark nonlinear functions used
+in \citet{yao.liu.lin1999} to study a pair of evolutionary programming
+optimization algorithms.  Function definitions are in
+Table~\ref{tab:23funcs}.  Because it includes a random component and
+so lacks a reproducible minimum value, we ignore the function numbered
+function 7 in their sequence.\footnote{The omitted function is
+  $\sum_{i=1}^n ix_i^4 +U(0,1)$, where $U(0,1)$ is a uniformly
+  distributed random variable on the unit interval that takes a new
+  value whenever the function is evaluated.  This stochastic aspect
+  means that even given the set of parameters that minimize the
+  nonstochastic component $\sum_{i=1}^n ix_i^4$, i.e., $x_i=0$, the
+  value of the function virtually never attains the minimum possible
+  value of zero.  An optimizer that evaluated the function at $x_i=0$
+  would not in general obtain a function value smaller than the
+  function value obtained for a wide range of different parameter
+  values.  Hence we do not consider this function to be a good test
+  for function optimization algorithms.}  Implementations of these
+functions are available in the supplemental \proglang{R} file provided
+with this article.\footnote{This supplemental file is available at
+  \url{http://sekhon.berkeley.edu/rgenoud/func23.R}.}  These
+\proglang{R} definitions include the values of the constants used in
+functions 14, 15 and 19 through 23.  The function argument domains are
+restricted to the specific domains used by \citet{yao.liu.lin1999} via
+bounds that are stated in the list named \code{testbounds} in the
+supplemental file.
+
+\begin{table}
+  \begin{center}
+    \line(1,0){450}
+  \end{center}  
+ \begin{tabular}{LLLL}
+\text{func.} & \text{definition} & n & \text{minimum}^a \\
+ 1 & \sum_{i=1}^n x_i^2 & 30 & 0 \\
+ 2 & \sum_{i=1}^n |x_i| + \prod_{i=1}^n |x_i| & 30 & 0 \\
+ 3 & \sum_{i=1}^n (\sum_{j=1}^i x_j)^2 & 30 & 0 \\
+ 4 & \max_i \{|x_i|, 1\leq i\leq n\} & 30 & 0 \\
+ 5 & \sum_{i=1}^{n-1} [100(x_{i+1}-x_i^2)^2 +(x_i-1)^2],
+ & 30 & 0 \\
+ 6 & \sum_{i=1}^n (\lfloor x_i + 0.5\rfloor)^2 & 30 & 0 \\
+ 7 & \sum_{i=1}^n ix_i^4 +U(0,1) & 30 & 0 \\
+ 8 & \sum_{i=1}^n -x_i\sin(\sqrt{|x_i|}) & 30 & -12569.5 \\
+ 9 & \sum_{i=1}^n [x_i^2-10\cos(2\pi x_i)+10] & 30 & 0 \\
+10 & -20\exp\left(-0.2\sqrt{n^{-1}\sum_{i=1}^n x_i^2}\,\right) \\
+   & \qquad -\exp(n^{-1}\sum_{i=1}^n\cos 2\pi x_i)+20+e & 30 & 0 \\
+11 & (1/1000) \sum_{i=1}^n x_i^2 -
+\prod_{i=1}^n\cos\left(x_i/\sqrt{i}\right) + 1 & 30 & 0 \\
+12 & n^{-1}\pi \left\{10 \sin^2(\pi y_1)+\sum_{i=1}^{n-1}(y_i-1)^2
+[1+10\sin^2(\pi y_{i+1})]+(y_n-1)^2\right\} \\
+ & \quad +\sum_{i=1}^n u(x_i,10,100,4), & 30 & 0 \\
+ & y_i=1+(x_i+1)/4, \quad u(x_i,a,k,m)=\begin{cases} k(x_i-a)^m, & x_i>a, \\
+ 0, & -a\leq x_i\leq a,\\ k(-x_i-a)^m, & x_i<-a,
+\end{cases} & \\
+13 & \left\{ \sin^2(3\pi
+  x_1)+\sum_{i=1}^{n-1}(x_i-1)^2[1+\sin^2(3\pi x_{i+1})]\right\}/10 \\
+ & \quad  +(x_n-1)[1+\sin^2(2\pi x_n)]/10
++\sum_{i=1}^n u(x_i,5,100,4) & 30 & 0 \\
+14 & \left\{1/500+
+\sum_{j=1}^{25} 1/\left[j+\sum_{i=1}^2(x_i-a_{ij})^6\right]\right\}^{-1} & 2 & 1 \\
+15 & \sum_{i=1}^{11} [a_i-x_1(b_i^2+b_ix_2)/(b_i^2+b_ix_3+x_4)]^2 & 4 & 0.0003075 \\
+16 & 4x_1^2-2.1x_1^4+x_1^6/3+x_1x_2-4x_2^2+4x_2^4 & 2 & -1.0316285 \\
+17 & [x_2-5.1x_1^2/(4\pi^2) + 5x_1/\pi - 6]^2 +
+    10[1-1/(8\pi)]\cos(x_1) + 10 & 2 & 0.398 \\
+18 & [1+(x_1+x_2+1)^2(19-14 x_1+3 x_1^2-14 x_2+6 x_1 x_2+3 x_2^2)] \\
+ & \quad \times [30+(2 x_1-3 x_2)^2 (18-32 x_1+12 x_1^2+48 x_2-36 x_1 x_2+27 x_2^2)] & 2 & 3 \\
+19 & -\sum_{i=1}^4 c_i\exp\left[-\sum_{j=1}^4 a_{ij}(x_i-p_{ij})^2\right] & 4 & -3.86 \\
+20 & -\sum_{i=1}^4 c_i\exp\left[-\sum_{j=1}^6 a_{ij}(x_i-p_{ij})^2\right] & 6 & -3.32 \\
+21 & \sum_{i=1}^5 [(x-a_i)^{\prime}(x-a_i)+c_i]^{-1} & 4 & -10 \\
+22 & \sum_{i=1}^7 [(x-a_i)^{\prime}(x-a_i)+c_i]^{-1} & 4 & -10 \\
+23 & \sum_{i=1}^{10} [(x-a_i)^{\prime}(x-a_i)+c_i]^{-1} & 4 & -10 
+  \end{tabular}
+  \begin{flushleft}
+    Notes: $^a$Minimum function value within specified bounds as given by
+    \citet[85]{yao.liu.lin1999}.
+  \end{flushleft}
+  \vspace*{.1in}
+  \caption{23 Benchmark Functions}
+  \label{tab:23funcs}
+\begin{center}
+  \line(1,0){450}
+\end{center}
+\end{table}
+
+As \citet{yao.liu.lin1999} describe, optimizing each of functions
+1--13 presents a high-dimensional problem.  These functions each have
+$n=30$ free parameters.  Functions 1--5 are unimodal, with function 5
+being a 30-dimensional version of the banana-shaped Rosenbrock
+function.  Function 6 is a step function.  Function 6 has one minimum
+value that occurs when all arguments are in the interval
+$x_i\in[0,.5)$, and the function is discontinuous.  Functions 8--13
+are multimodal, defined such that the number of local minima increases
+exponentially with the number of arguments.
+\citet[84]{yao.liu.lin1999} describe these functions as among ``the
+most difficult class of problems for many optimization algorithms
+(including [evolutionary programming]).''  Functions 14--23, which
+have between two and six free parameters each, each have only a few
+local minima.  Nonetheless the evolutionary programming algorithms
+considered by \citet{yao.liu.lin1999} have trouble optimizing
+functions 21--23.  Although \citet[85]{yao.liu.lin1999} state that
+each of these functions has a minimum value of $-10$, over 50
+replications the two algorithms they consider achieve solutions
+averaging between $-5.52$ and $-9.10$ \citep[88,
+Table~IV]{yao.liu.lin1999}.
+
+We use these benchmark functions to illustrate not only how effective
+\code{genoud} can be with a range of difficult problems, but also to emphasize
+an important aspect of how one should think about trying to tune the
+optimizer's performance.  Theory regarding genetic algorithms suggests that
+optimal solutions are more likely to appear as both the population size of
+candidate solutions and the number of generations increase.  In \code{genoud}
+two arguments determine the number of generations.  One is
+\code{max.generations}: if \code{hard.generation.limit=TRUE}, then the value
+specified for \code{max.generations} is a binding upper limit.  The other is
+\code{wait.generations}, which determines when the algorithm terminates if
+\code{hard.generation.limit=FALSE}.  But even if
+\code{hard.generation.limit=TRUE}, then \code{wait.generations} determines for
+how many generations the algorithm continues once the best parameter vector
+and the value of the function being optimized appear to have settled down.
+The fact that the current best solution is not changing should not be treated
+as decisive, because this solution may be merely a local optimum or a
+saddlepoint.  If the population size is sufficient, the algorithm tends to
+build a population of trial solutions that contain parameters in neighborhoods
+of all the competitive local optima in the domain defined by the parameter
+boundaries.  Even while the current best solution is stable, the algorithm is
+improving the solutions near other local optima.  So having a higher
+\code{wait.generations} value never worsens the algorithm's efficacy.
+
+Increasing \code{max.generations} may or may not in itself improve
+optimization.  The value of \code{max.generations} sets the value of $T$ used
+in the mutation operators---operators 4 and 7 in Table~\ref{tab:operators}.
+These mutation operators perform random search near a trial solution that has
+been selected for mutation only when the current generation count is an
+appreciable fraction of $T$.  So increasing \code{max.generations} without
+changing \code{wait.generations} increases the period during which random
+search is occurring over a wider domain.  For multimodal functions such a
+wider search may be helpful, but sometimes failing to search more densely near
+the current trial solutions is not good.
+
+We use \code{genoud} to minimize the 23 functions using two values for
+\code{pop.size} (5000 and 10000) and two values for
+\code{max.generations} (30 and 100).  Following
+\citet{yao.liu.lin1999}, we replicate each optimization 50 times.  The
+following code describes the computations.  The list \code{testfuncs},
+vector \code{testNparms} and list \code{testbounds} are defined in the
+supplemental \proglang{R} file, and it is assume that this file is
+loaded with the \code{source("supplemental.R")} command.  The vector
+\code{gradcheck} is true for all elements except the ones corresponding
+to functions 6 and 7.
+<<eval=false>>= 
+source("supplemental.R")
+gradcheck <- rep(TRUE,23)
+gradcheck[6:7] <- FALSE
+sizeset <- c(5000,10000)
+genset <- c(30,100)
+nreps <- 50
+gsarray <- array(NA, dim=c(length(sizeset), length(genset), 23, nreps))
+asc <- function(x) { as.character(x) }
+dimnames(gsarray) <- list(asc(sizeset), asc(genset), NULL, NULL);
+for (gsize in sizeset) {
+  for (ngens in genset) {
+    for (i in 1:23) {
+      for (j in 1:nreps) {
+        gsarray[as.character(gsize), as.character(ngens),i,j] <- 
+          genoud(testfuncs[[i]], nvars=testNparms[i], pop.size=gsize,
+               max.gen=ngens, hard.gen=TRUE, Domains=testbounds[[i]],
+               solution.tol=1e-6, boundary=1, gradient.check=gradcheck[i],
+              print=0)$value
+      }
+    }
+  }
+}
+@ 
+
+Using \code{genoud} to minimize the benchmark functions produces excellent
+results, at least when the \code{pop.size} and \code{max.generations}
+arguments are sufficiently large.  Table~\ref{tab:23mean} reports the mean
+function values for each configuration of the arguments.  These values may be
+compared both to the true function minima given by \citet{yao.liu.lin1999}
+(see the rightmost column in Table~\ref{tab:23funcs}) and to the average
+minimum function values \citet{yao.liu.lin1999} report for their ``fast''
+evolutionary programming (FEP) algorithm, which appear in the last column of
+Table~\ref{tab:23mean}.  The \code{genoud} averages for the \code{max.gen=100}
+configurations equal or are close to the true minima for all the functions
+except function 13.  One can reasonably argue that the average solutions for
+function 5 are not as close to zero as might be desired: these averages are
+close to $10^{-7}$, while the averages for other functions that have a true
+minimum of zero are $10^{-15}$ or smaller.  And the averages for functions 6,
+12 and 15 in the \code{pop.size=5000} case are off.  The effect of increasing
+\code{pop.size} is apparent with respect to both those three functions and
+also functions 13 and 20--23: the average minima are smaller with
+\code{pop.size=10000} than with \code{pop.size=5000}.  Except for functions 6
+and 12 in the \code{pop.size=5000} case and function 13, all the \code{genoud}
+solution averages for \code{max.gen=100} are either slightly or substantially
+better than the corresponding FEP solution averages.
+
+The results in Table~\ref{tab:23mean} clearly illustrate the potential
+consequences of not allowing \code{genoud} to run for a sufficient number of
+generations.  While some of the \code{genoud} solutions for \code{max.gen=30}
+have competitive means, several of the means are not good at all.
+
+\begin{table}
+  \begin{center}
+    \line(1,0){450}
+  \end{center}    
+ \begin{tabular}{llllll}
+ & \multicolumn{4}{c}{\code{genoud}} & \\ \cline{2-5}
+ & \multicolumn{2}{c}{\code{pop.size=5000}$^a$} & \multicolumn{2}{c}{\code{pop.size=10000}$^a$} & \\
+\text{func.} & \code{max=30} & \code{max=100} & \code{max=30} & \code{max=100} & \text{FEP}$^b$ \\
+ 1 & 1.453\e 32 & 1.658\e 32 & 2.416\e 32 & 6.134\e 32 & 5.7\e 4 \\
+ 2 & 6.55\e 16 & 7.212\e 16 & 9.652\e 16 & 1.043\e 15 & 8.1\e 3 \\
+ 3 & 4.633\e 18 & 3.918\e 18 & 3.787\e 18 & 4.032\e 18 & 1.6\e 2 \\
+ 4 & 6.203\e 17 & 6.542\e 17 & 9.453\e 17 & 7.85\e 17 & 0.3 \\
+ 5 & 0.07973 & 5.887\e 08 & 8.133\e 08 & 8.917\e 08 & 5.06 \\
+ 6 &  18.58 &   0.08 &   9.38 &      0 & 0 \\
+% 7 & 0.1114 & 0.07473 & 0.1114 & 0.06466 & 7.6\e 3 \\
+ 8 & -12569.49 & -12569.49 & -12569.49 & -12569.49 & -12554.5 \\
+ 9 &  2.786 &      0 & 0.9353 &      0 & 4.6\e 2 \\
+10 &  2.849 & 3.997\e 15 &  2.199 & 3.997\e 15 & 1.8\e 2 \\
+11 & 7.994\e 17 & 7.105\e 17 & 9.548\e 17 & 6.439\e 17 & 1.6\e 2 \\
+12 & 5.371\e 19 & 0.004147 & 0.002073 & 1.178\e 19 & 9.2\e 6 \\
+13 & 0.02095 & 0.006543 & 0.006629 & 0.003011 & 1.6\e 4 \\
+14 &  0.998 &  0.998 &  0.998 &  0.998 & 1.22 \\
+15 & 0.0003441 & 0.0004746 & 0.0003807 & 0.0003807 & 5.0\e 4 \\
+16 & -1.0316285 & -1.0316285 & -1.0316285 & -1.0316285 & -1.03 \\
+17 & 0.3979 & 0.3979 & 0.3979 & 0.3979 & 0.398 \\
+18 &      3 &      3 &      3 &      3 & 3.02 \\
+19 & -3.863 & -3.863 & -3.863 & -3.863 & -3.86 \\
+20 & -3.274 & -3.277 & -3.279 & -3.286 & -3.27 \\
+21 &  -9.85 & -9.444 &  -9.95 & -10.05 & -5.52 \\
+22 & -9.771 & -10.09 & -10.19 &  -10.3 & -5.52 \\
+23 &  -10.1 & -9.997 & -10.32 & -10.21 & -6.57 
+  \end{tabular}
+  \begin{flushleft}
+    Note: $^b$Average minimum function values (over 50 replications) obtained
+    using \code{genoud}.  $^a$Mean best function values (over 50 replications)
+    reported for the ''fast'' evolutionary programming algorithm, from
+    \citet[85 and 88, Tables II--IV]{yao.liu.lin1999}.
+  \end{flushleft}
+  \vspace*{.1in}
+  \caption{Mean Values of 22 Optimized Functions}
+  \label{tab:23mean}
+\begin{center}
+  \line(1,0){450}
+\end{center}
+\end{table}
+
+The effect of increasing \code{pop.size} are even more clearly apparent in
+Table~\ref{tab:23sdev}, which reports the standard deviations of the
+respective minima across the 50 replications.  With the exceptions of
+functions 6, 12, 13, 15 and 21 with \code{pop.size=5000}, the \code{genoud}
+solutions for \code{max.gen=100} vary much less than the corresponding FEP
+solutions.  For those functions and also for functions 20, 22 and 23, the
+\code{max.gen=100} solutions with \code{pop.size=10000} vary noticeably less
+than the solutions with \code{pop.size=5000}.
+
+\begin{table}
+\begin{center}
+  \line(1,0){450}
+\end{center}  
+  \begin{tabular}{llllll}
+ & \multicolumn{4}{c}{\code{genoud}} & \\ \cline{2-5}
+ & \multicolumn{2}{c}{\code{pop.size=5000}$^a$} & \multicolumn{2}{c}{\code{pop.size=10000}$^a$} & \\
+\text{func.} & \code{max=30} & \code{max=100} & \code{max=30} & \code{max=100} & \text{FEP}$^b$ \\
+ 1 & 9.997\e 32 & 7.059\e 32 & 9.562\e 32 & 2.1\e 31 & 1.3\e 4 \\
+ 2 & 1.668\e 15 & 1.621\e 15 & 2.116\e 15 & 2.102\e 15 & 7.7\e 4 \\
+ 3 & 4.568\e 18 & 3.342\e 18 & 4.38\e 18 & 5.136\e 18 & 1.4\e 2 \\
+ 4 & 1.793\e 16 & 1.758\e 16 & 2.055\e 16 & 2.002\e 16 & 0.5 \\
+ 5 & 0.5638 & 4.921\e 08 & 5.573\e 08 & 4.955\e 08 & 5.87 \\
+ 6 &   5.65 &  0.274 &  3.528 &      0 & 0 \\
+% 7 & 0.0837 & 0.05153 & 0.08042 & 0.04883 & 2.6\e 3 \\
+ 8 & 3.749\e 10 & 1.071\e 12 & 8.948\e 09 & 6.365\e 13 & 52.6 \\
+ 9 &  1.864 &      0 &  1.179 &      0 & 1.2\e 2 \\
+10 & 0.7146 &      0 &  0.702 &      0 & 2.1\e 3 \\
+11 & 1.209\e 16 & 1.582\e 16 & 1.289\e 16 & 8.713\e 17 & 2.2\e 2 \\
+12 & 2.336\e 18 & 0.02052 & 0.01466 & 7.423\e 19 & 3.6\e 6 \\
+13 & 0.03427 & 0.006867 & 0.006903 & 0.001508 & 7.3\e 5 \\
+14 & 5.638\e 12 & 8.894\e 11 & 1.029\e 12 & 4.35\e 12 & 0.56 \\
+15 & 0.0001813 & 0.0003546 & 0.000251 & 0.0002509 & 3.2\e 4 \\
+16 & 1.315\e 14 & 9.751\e 15 & 1.233\e 14 & 1.054\e 14 & 4.9\e 7 \\
+17 & 5.422\e 15 & 5.51\e 15 & 4.925\e 15 & 1.392\e 14 & 1.5\e 7 \\
+18 & 1.509\e 13 & 3.477\e 14 & 6.18\e 14 & 2.907\e 14 & 0.11 \\
+19 & 7.349\e 15 & 1.521\e 15 & 1.344\e 14 & 7.255\e 15 & 1.4\e 5 \\
+20 & 0.05884 & 0.0583 & 0.05765 & 0.05504 & 5.9\e 2 \\
+21 &  1.212 &  1.776 &  1.005 & 0.7145 & 1.59 \\
+22 &  1.937 &  1.269 &  1.052 & 0.7459 & 2.12 \\
+23 &  1.479 &  1.636 &  1.066 &   1.29 & 3.14 
+  \end{tabular}
+  \begin{flushleft}
+    Note: $^a$Standard deviation of the minimum function values (over 50
+    replications) obtained using \code{genoud}.  $^b$Standard deviation of the
+    best function values (over 50 replications) reported for the ''fast''
+    evolutionary programming algorithm, from \citet[85 and 88, Tables
+    II--IV]{yao.liu.lin1999}.
+  \end{flushleft}
+  \vspace*{.1in}
+  \caption{Standard Deviations of Values of 22 Optimized Functions}
+  \label{tab:23sdev}
+\begin{center}
+  \line(1,0){450}
+\end{center}
+\end{table}
+
+\subsection{A Logistic Least Quartile Difference Estimator:}
+Our third example is a version of the LQD estimator used in
+\code{multinomRob}.  Using the \proglang{R} function \code{IQR} to compute the
+interquartile range, the function to be minimized may be defined as
+follows.\footnote{The LQD problem solved in \code{multinomRob} is somewhat
+  different.  There the problem is to minimize the $\binom{h_{K}}{2}$ order
+  statistic of the set of absolute differences among the standardized
+  residuals, where $h_K$ is a function of the sample size and the number of
+  unknown regression model coefficients \citep{MebaneSekhon2004}.  The problem
+  considered in the current example is simpler but exhibits similar estimation
+  difficulties.}
+<<eval=false>>= 
+LQDxmpl <- function(b) {
+  logistic <- function(x) { 1/(1+exp(-x)) }
+  sIQR <- function(y, yhat, n) {
+    IQR((y-yhat)/sqrt(yhat*(n-yhat)), na.rm=TRUE)
+  }
+ sIQR(y, m*logistic(x %*% b), m)
+}
+@ 
+For this example we define \code{LQDxmpl} after we compute the simulated data,
+so the data vector \code{y}, matrix \code{x} and scalar \code{m} are in scope
+to evaluate to have the values we simulate:
+<<eval=false>>= 
+m <- 100
+x <- cbind(1,rnorm(1000),rnorm(1000))
+b1 <- c(.5, 1, -1)
+b2 <- c(0, -1, 1)
+logistic <- function(x) { 1/(1+exp(-x)) }
+y <- rbinom(1000, m, logistic(c(x[1:900,] %*% b1, x[901:1000,] %*% b2)))
+@ 
+The data simulate substantial contamination.  The first 900 observations are
+generated by one binomial regression model while the last 100 observations
+come from a very different model.
+
+Presuming we are interested in the model that generated the bulk of the data,
+ignoring the contamination in a generalized linear model with the binomial
+family produces very poor results:
+<<eval=false>>= 
+summary(glm1 <- glm(cbind(y,m-y) ~ x[,2] + x[,3], family="binomial"))
+@
+\begin{CodeChunk}
+  \begin{CodeOutput}
+Call:
+glm(formula = cbind(y, m - y) ~ x[, 2] + x[, 3], family = "binomial")
+
+Deviance Residuals: 
+     Min        1Q    Median        3Q       Max  
+-22.9168   -1.1693    0.3975    1.5895   24.6439  
+
+Coefficients:
+             Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  0.439492   0.007097   61.93   <2e-16 ***
+x[, 2]       0.679847   0.007985   85.14   <2e-16 ***
+x[, 3]      -0.716963   0.007852  -91.31   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+  \end{CodeOutput}
+\end{CodeChunk}
+Of course, if we knew which observations to omit the results would be much
+better:
+<<eval=false>>= 
+suby <- y[1:900]
+subx <- x[1:900,]
+summary(glm2 <- glm(cbind(suby,m-suby) ~ subx[,2] + subx[,3], family="binomial"))
+@ 
+\begin{CodeChunk}
+  \begin{CodeOutput}
+Call:
+glm(formula = cbind(suby, m - suby) ~ subx[, 2] + subx[, 3], 
+    family = "binomial")
+
+Deviance Residuals: 
+     Min        1Q    Median        3Q       Max  
+-3.21478  -0.71699   0.03528   0.67867   2.88314  
+
+Coefficients:
+             Estimate Std. Error z value Pr(>|z|)    
+(Intercept)  0.501880   0.008036   62.46   <2e-16 ***
+subx[, 2]    1.003592   0.009779  102.63   <2e-16 ***
+subx[, 3]   -0.984295   0.009437 -104.30   <2e-16 ***
+---
+Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1 
+  \end{CodeOutput}
+\end{CodeChunk}
+But in practical applications it is unknown apriori which observations should
+be treated as outliers.
+
+As the definition of \code{LQDxmpl} indicates, the LQD is based on
+minimizing the interquartile range (IQR) of the standardized
+residuals.  Because the quartiles correspond to different data points
+for different values of the regression coefficients, the fitness
+function is not smooth, which is to say it is not everywhere
+differentiable.  In general, at every point in the parameter space
+where the identity of the first or third quartile point changes, the
+function is not differentiable.  Figure~\ref{fig:lqd1} illustrates
+this.  A higher resolution version of this figure is available in
+\cite{MebaneJr.+Sekhon:2011}---also see
+\url{http://sekhon.berkeley.edu/papers/rgenoudJSS.pdf}.
+
+The IQR clearly has a minimum in the vicinity of the coefficient
+values used to generate most of the data.  But contour plots for the
+numerically evaluated partial derivative with respect to the second
+coefficient parameter testify to the function's local irregularity.
+The function we use to evaluate this numerical derivative is defined
+as follows.
+<<eval=false>>= 
+dLQDxmpl <- function(b) {
+ eps <- 1e-10
+  logistic <- function(x) { 1/(1+exp(-x)) }
+  sIQR <- function(y, yhat, n) {
+    IQR((y-yhat)/sqrt(yhat*(n-yhat)), na.rm=TRUE)
+  }
+ dsIQR <- vector()
+  for (i in 1:length(b)) {
+   beps <- b
+    beps[i] <- b[i]+eps
+    dsIQR <-
+      c(dsIQR,
+        (sIQR(y, m*logistic(x %*% beps), m)-
+          sIQR(y, m*logistic(x %*% b), m))/eps)
+  }
+  return(dsIQR)
+}
+@ 
+Setting the intercept equal to 0.5, the code to generate the plotted values is
+%  -rw-rw---- 1 wrm1 research    1878 Feb 10  2007 lqdxmpl2plotB.R
+<<eval=false>>= 
+blen <- 3
+lenbseq <- length(bseq <- seq(-2,2,length=200))
+bseq3 <- seq(-1.2,-.9,length=200)
+bseq2 <- seq(.89,1.1,length=200)
+IQRarr <- IQRarrA <- array(NA, dim=c((1+blen), lenbseq, lenbseq))
+dimnames(IQRarrA) <- list(NULL, as.character(bseq), as.character(bseq))
+dimnames(IQRarr) <- list(NULL, as.character(bseq2), as.character(bseq3))
+for (i in 1:lenbseq) {
+  for (j in 1:lenbseq) {
+   IQRarrA[1,i,j] <- LQDxmpl(c(.5, bseq[i], bseq[j]))
+    IQRarrA[-1,i,j] <- dLQDxmpl(c(.5, bseq[i], bseq[j]))
+    IQRarr[1,i,j] <- LQDxmpl(c(.5, bseq2[i], bseq3[j]))
+    IQRarr[-1,i,j] <- dLQDxmpl(c(.5, bseq2[i], bseq3[j]))
+  }
+}
+@ 
+The following code produces the plots:
+<<eval=false>>= 
+par(mfrow=c(2,2), lwd=.1)
+contour(bseq,bseq, IQRarrA[1,,], main="IQR", xlab="b[2]", ylab="b[3]")
+contour(bseq,bseq, IQRarrA[3,,], main="partial derivative w/r/t b[2]",
+        xlab="b[2]", ylab="b[3]")
+loc2 <- (150:160)-5
+loc3 <- (40:50)+5
+contour(bseq[loc2],bseq[loc3], IQRarrA[3,loc2,loc3],
+        main="partial derivative w/r/t b[2]",
+        xlab="b[2]", ylab="b[3]")
+contour(bseq2,bseq3, IQRarr[3,,], main="partial derivative w/r/t b[2]",
+        xlab="b[2]", ylab="b[3]")
+@ 
+If the IQR function were smooth, we would see clearly separated, slightly
+curved contour lines, reflecting the nonlinearity of the \code{logistic}
+function, but there is nothing like that.  Instead, looking over the domain
+$[-2,2]^2$ for the second and third regression coefficient parameters, with
+200 points evaluated along each axis (the upper right plot), there is a
+splotchy cloud.  This reflects the fact that the derivative changes sign very
+frequently over the domain: of the 40,000 points at which the derivative is
+evaluated, it is positive at 12,460 points and negative at 27,540 points.
+\begin{figure}[t]
+  \caption{Contour Plots of the LQD Fitness Function and of its Partial Derivatives}
+  \label{fig:lqd1}
+  \begin{center}
+    \includegraphics{lqdxmpl2B.pdf}
+%  -rw-rw---- 1 wrm1 research    2745 Feb 10 23:15 lqdxmpl2plotB.Rout
+  \end{center}
+  \vspace{-.3in}
+\end{figure}
+
+The LQD fitness function is not appreciably smoother close to the true
+values.  The bottom two plots show the partial derivatives with
+respect to the second coefficient parameter evaluated over the domain
+$[.89,1.1]\times[-1.2,-.9]$.  The bottom left plot evaluates the
+derivatives at 11 points along each axis while the bottom right plot
+uses 200 points along each axis.  In the left plot it is easier to see
+the intricacy of the partitioning of the parameter space as the
+identity of the first or third quartile point changes.  The bottom
+right plot shows the intricacy in fact replicates at the finer grain
+of the more detailed evaluations (to see this it is probably necessary
+to magnify the plot while viewing online the \textit{Journal of
+  Statistical Software} version of this
+documentation).\footnote{Please see \cite{MebaneJr.+Sekhon:2011} or
+  \url{http://sekhon.berkeley.edu/papers/rgenoudJSS.pdf}.}  Within
+this smaller domain the sign of the derivative changes even more
+frequently than it does over the domain $[-2,2]^2$: the derivative is
+positive at 18,098 points and negative at 21,902 points.
+
+While the LQD fitness function may be differentiable in a neighborhood of the
+global solution, that neighborhood, if it exists, is clearly not very big.  As
+likely is that the global solution is located at a point where the function is
+not differentiable.  Hence a numerically evaluated gradient is not meaningful
+for evaluating whether the solution has been found.  At the true solution,
+numerical gradient values may differ substantially from zero.
+
+To use the LQD to estimate the binomial regression model parameters we use the
+following call to \code{genoud}.  Because gradient information is of
+questionable relevance for this problem, we turn off the termination condition
+that the gradient at the solution be smaller than the value specified for the
+\code{solution.tolerance} argument.  We retain the default setting
+\code{BFGS=TRUE} because, in principle, gradient-driven optimization may help
+in each of the many differentiable neighborhoods, even if it is useless across
+the nondifferentiable boundaries.  Our experience optimizing the LQD
+\citep{MebaneSekhon2004} shows that using the BFGS in this way improves
+performance, even though the gradient is not useful for evaluating whether the
+solution has been found.
+<<eval=false>>= 
+LQD1  <-
+  genoud(LQDxmpl, nvars=3, max=FALSE, pop.size=2000, max.generations=300,
+        wait.generations=100, gradient.check=FALSE, print=1)
+@ 
+This invocation of the \code{LQDxmpl} function matches the behavior of
+\code{multinomRob} in that it produces an estimate for the intercept parameter
+along with the other coefficients.  In a linear regression context, the
+interquartile range statistic contains no information about the intercept, so
+the LQD is not an estimator for that parameter.  With a binomial regression
+model there is some information about the intercept due to the nonlinearity of
+the \code{logistic} function.  The LQD estimate for the intercept should
+nonetheless be expected not to be very good.
+
+Results from the preceding estimation are as follows.
+%  macht:/home/xchg/jss07/rgenoud:
+%  -rw-rw---- 1 wrm1 research    5080 Aug  7 02:31 lqdxmpl1b.Rout
+\begin{CodeChunk}
+  \begin{CodeOutput}
+Tue Aug  7 02:27:08 2007
+Domains:
+ -1.000000e+01   <=  X1   <=    1.000000e+01 
+ -1.000000e+01   <=  X2   <=    1.000000e+01 
+ -1.000000e+01   <=  X3   <=    1.000000e+01 
+
+[...]
+
+HARD Maximum Number of Generations: 300
+Maximum Nonchanging Generations: 100
+Population size       : 2000
+Convergence Tolerance: 1.000000e-06
+
+Using the BFGS Derivative Based Optimizer on the Best Individual Each Generation.
+Not Checking Gradients before Stopping.
+Using Out of Bounds Individuals.
+
+Minimization Problem.
+
+
+Generation#	    Solution Value
+
+      0 	4.951849e-01
+     56 	1.298922e-01
+     57 	1.298891e-01
+     59 	1.298848e-01
+     60 	1.298820e-01
+     61 	1.298793e-01
+     62 	1.298768e-01
+     63 	1.298744e-01
+
+'wait.generations' limit reached.
+No significant improvement in 100 generations.
+
+Solution Fitness Value: 1.298743e-01
+
+Parameters at the Solution (parameter, gradient):
+
+ X[ 1] :	8.130357e-02	G[ 1] :	9.616492e-03
+ X[ 2] :	8.889485e-01	G[ 2] :	-1.167897e-01
+ X[ 3] :	-9.327966e-01	G[ 3] :	-3.090130e-02
+
+Solution Found Generation 63
+Number of Generations Run 164
+
+Tue Aug  7 02:31:09 2007
+Total run time : 0 hours 4 minutes and 1 seconds
+  \end{CodeOutput}
+\end{CodeChunk}
+Recall that the gradient is not reliably informative at the solution.  To
+check whether this solution is believable, we might try reestimating the model
+using a larger population and larger specified number of generations:
+<<eval=false>>= 
+LQD1  <-
+  genoud(LQDxmpl, nvars=3, max=FALSE, pop.size=10000, max.generations=1000,
+        wait.generations=300, gradient.check=FALSE, print=1)
+@ 
+At the price of a greatly increased running time (from four minutes up to
+one hour 53 minutes), the results are better than the
+first run (even though the summary measure of fit is slightly worse):
+%  macht:/home/xchg/jss07/rgenoud:
+%  -rw-rw---- 1 wrm1 research    5236 Aug  7 05:16 lqdxmpl1d.Rout
+\begin{CodeChunk}
+  \begin{CodeOutput}
+Minimization Problem.
+
+
+Generation#	    Solution Value
+
+      0 	2.238865e-01
+      2 	1.301149e-01
+      3 	1.300544e-01
+      4 	1.300482e-01
+      6 	1.300375e-01
+      7 	1.300343e-01
+      8 	1.300323e-01
+    134 	1.299662e-01
+    135 	1.299099e-01
+    136 	1.298867e-01
+    137 	1.298843e-01
+    138 	1.298822e-01
+    139 	1.298791e-01
+    141 	1.298774e-01
+
+'wait.generations' limit reached.
+No significant improvement in 300 generations.
+
+Solution Fitness Value: 1.298770e-01
+
+Parameters at the Solution (parameter, gradient):
+
+ X[ 1] :	2.013748e-01	G[ 1] :	-7.394125e-02
+ X[ 2] :	9.526390e-01	G[ 2] :	7.807607e-02
+ X[ 3] :	-9.642458e-01	G[ 3] :	3.834052e-02
+
+Solution Found Generation 141
+Number of Generations Run 442
+
+Tue Aug  7 05:16:37 2007
+Total run time : 1 hours 53 minutes and 45 seconds
+  \end{CodeOutput}
+\end{CodeChunk}
+%$
+
+This example demonstrates a key difficulty that arises when optimizing
+irregular functions in the absence of gradients.  It is difficult to assess
+when or whether an optimum has been found.  The estimated coefficient values
+are close to the ones used to generate most of the data, except as expected
+the estimate for the intercept is not good.  The estimates are better than if
+we had ignored the possibility of contamination.  But whether these are the
+best possible estimates is not clear.  If we were to use an even larger
+population and specify that an even greater number of generations be run,
+perhaps a better solution would be found.
+
+%http://sekhon.berkeley.edu/rgenoud/R/genoud_cluster_manual.R
+%http://sekhon.berkeley.edu/rgenoud/R/genoud_cluster_manual_tunnel.R
+
+%\code{genoud} can be tricked into doing constrained optimization by
+%passing in a function which contains a penalty function.
+
+Even for less irregular problems convergence is difficult to determine.
+Nonlinear optimizers often report false convergence, and users should not
+simply trust whatever convergence criteria an optimizer uses.
+\citet{McCulloughVinod2003} offer four criteria for verifying the solution of
+a nonlinear solver.  These criteria are meaningful only for problems that meet
+regularity conditions at the solution, notably differentiability, and as such
+are not useful for the LQD example offered above.  The four criteria are: (1)
+making sure the gradients are zero; (2) inspecting the solution path (i.e.,
+the trace) to make sure it follows the expected rate of convergence; (3)
+evaluating the Hessian to make sure it is well-conditioned;\footnote{Following
+  an exchange with \citet{DrukkerWiggins2004}, \citet{McCulloughVinod2004b}
+  modify their third suggestion to note that determining if the Hessian is
+  well-conditioned in part depends on how the data are scaled.  That is, a
+  Hessian that appears to be ill-conditioned may be made well-conditioned by
+  rescaling. So if an Hessian appears to be ill-conditioned,
+  \citet{McCulloughVinod2004b} recommend that the analyst attempt to determine
+  if rescaling the data can result in a well-conditioned Hessian.} and (4)
+profiling the likelihood to ascertain if a quadratic approximation is
+adequate.  One may need to take the results from \code{genoud} and pass them
+to \code{optim} to conduct some of these diagnostic tests such as to profile
+the likelihood.  It is also good practice to use more than one optimizer to
+verify the solution \citep{stokes2004}.
+
+Note that \code{genoud} uses its own random number seeds and internal
+pseudorandom number generators to insure backward compatibility with
+the original C version of the software and to make cluster behavior
+more predictable.  These seeds are set by the \code{unif.seed} and
+\code{int.seed} options.  The \proglang{R} \code{set.seed} command is
+ignored by \code{genoud}.
+
+%user supplied gradients and lexical search?
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+The \code{genoud} function provides many more options than can be reviewed in
+this brief paper.  These options are described in the \proglang{R} help file.
+The most important option 
+influencing how well the evolutionary algorithm works is the \code{pop.size}
+argument.  This argument controls the population size---i.e., it is the number
+of individuals \code{genoud} uses to solve the optimization problem.  As noted
+above, the theorems proving that genetic algorithms find good solutions are
+asymptotic in both population size and the number of generations.  It is
+therefore important that the \code{pop.size} value not be small.  On the other
+hand, computational time is finite so obvious trade-offs must be made.  As the
+LQD example illustrates, a larger population size is not necessarily
+demonstrably better.
+The most important options to ensure that a good solution is found, aside from
+\code{pop.size}, are \code{wait.generations}, \code{max.generations} and
+\code{hard.generation.limit}.
+
+Many statistical models have objective functions that are nonlinear
+functions of the parameters, and optimizing such functions is tricky
+business \citep{AltmanGillMcDonald2003}.  Optimization difficulties
+often arise even for problems that are generally considered to be
+simple.  For a cautionary tale on how optimization can be a difficult
+task even for such problems see Stokes' (\citeyear{stokes2004}) effort
+to replicate a probit model estimated by \citet[pp. 335]{maddala1992}.
+A recent controversy over estimating a nonlinear model estimated by
+maximum likelihood offers another cautionary tale
+\citep{DrukkerWiggins2004,McCulloughVinod2003,McCulloughVinod2004a,McCulloughVinod2004b,SchacharNalebuff2004}.
+End users are generally surprised to learn that such optimization
+issues can arise, and that results can substantially vary across
+optimizers and software implementations.
+
+The \pkg{rgenoud} package provides a powerful and flexible global
+optimizer.  When compared with traditional derivative-based
+optimization methods, \pkg{rgenoud} performs well
+\citep{SekhonMebane1998}.  Optimization of irregular functions is,
+however, as much of an art as science.  And an optimizer cannot be
+used without thought even for simple surfaces, let alone spaces that
+require a genetic algorithm.  We hope that the availability of a
+scalable global optimizer will allow users to work with difficult
+functions more effectively.
+
+
+
+
+\bibliography{rgenoud}
+\end{document}
+
+% LocalWords:  optima GillMurrayWright EfronTibshirani GENOUD MebaneSekhon LQD
+% LocalWords:  SekhonMebane multinomRob overdispersed nondifferentiable Broyden
+% LocalWords:  Goldfarb Shanno BFGS optim genoud EA EAs GA holland goldberg GAs
+% LocalWords:  GrefenstetteBaker davis FilhoTreleavenAlippi generation's dejong
+% LocalWords:  substring's grefenstette billingsley Vose NixVose vose GA's ADC
+% LocalWords:  GENOCOP MichalewiczSwaminathanLogan Michalewicz Polytope dnorm
+% LocalWords:  nvars Nonchanging UniqueCount var MemoryMatrix IQR LQDxmpl exp
+% LocalWords:  sIQR yhat na rm cbind rnorm rbinom Min Std Pr Signif suby subx
+% LocalWords:  apriori Raphson saddlepoints fn Genoud's gr hessian unif int ssh
+% LocalWords:  Tausworthe stdout tempdir polytope musil deckard makeSOCKcluster
+% LocalWords:  usernames username PVM MPI peakgeneration parm UC Outlier seq mu
+% LocalWords:  lapply xlab ylab col biclaw mNd ALTMAN rgenoud WandKingLau PKfit
+% LocalWords:  KingWand braumoeller BraumoellerGoodrichKline pharmacokinetics
+% LocalWords:  LeeLee pseudorandom pdf glm rw wrm lqdxmpl cl makeCluster probit
+% LocalWords:  localhost clusterExport stopCluster AltmanGillMcDonald GENetic
+% LocalWords:  McCulloughVinod SchacharNalebuff GenMatch GUI URL boolean Sekhon
+% LocalWords:  CPUs nonlinearity FAiR goodrich SekhonMatching ivivc vitro vivo
+% LocalWords:  multinomial Synth AbadieGardeazabal synth nonsmooth Rcore maxima
+% LocalWords:  resampling resamples optimizer's eval nonstochastic testbounds
+% LocalWords:  LLLL func ij unimodal Rosenbrock multimodal minima  saddlepoint
+% LocalWords:  testfuncs testNparms gradcheck sizeset genset nreps gsarray tol
+% LocalWords:  gsize ngens FEP LLLLLL sqrt dLQDxmpl eps dsIQR beps blen lenbseq
+% LocalWords:  bseq IQRarr IQRarrA dimnames mfrow lwd loc online DrukkerWiggins
+% LocalWords:  maddala funcs sapply runif ifelse rbind crossprod byrow vXXi
+% LocalWords:  interquartile

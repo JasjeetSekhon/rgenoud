@@ -1,0 +1,37 @@
+citHeader("To cite 'rgenoud' in publications use:")
+
+citEntry(entry = "Article",
+  title        = "Genetic Optimization Using Derivatives:  The {rgenoud} Package for {R}",
+  author       = personList(person(c("Walter", "R."), "Mebane, Jr."),
+                   as.person("Jasjeet S. Sekhon")),
+  journal      = "Journal of Statistical Software",
+  year         = "2011",
+  volume       = "42",
+  number       = "11",
+  pages        = "1--26",
+  url          = "http://www.jstatsoft.org/v42/i11/",
+
+  textVersion  =
+  paste("Walter R. Mebane, Jr.,  Jasjeet S. Sekhon (2011).",
+        "Genetic Optimization Using Derivatives:  The rgenoud Package for R.",
+        "Journal of Statistical Software, 42(11), 1-26.",
+        "URL http://www.jstatsoft.org/v42/i11/.")
+)
+
+citEntry(header="To refer to the theory on which this package is based, also cite:",
+  entry="Article",
+  title   = "Genetic Optimization Using Derivatives: Theory and Application to Nonlinear Models",
+  author  = personList(as.person("Jasjeet S. Sekhon"),
+                       person(c("Walter", "R."), "Mebane, Jr.")),
+  journal =  "Political Analysis",
+  year    =  "1998",
+  volume  = "7",
+  pages   = "189--213", 
+
+  textVersion  =
+  paste("Jasjeet S. Sekhon, Walter R. Mebane, Jr.  (1998).",
+        "Genetic Optimization Using Derivatives: Theory and Application to Nonlinear Models",
+        "Political Analysis, 7, 189-213.")
+)
+
+citFooter("BibTeX entries for LaTeX users: use\n", sQuote('toBibtex(citation("rgenoud"))'))

@@ -1,0 +1,280 @@
+2017-10-10 Version 5.8-1.0
+	* fixing the reproducibility bug. Now the seed is set from within
+	R which allows reproducibility
+	* rgenoud.R, genoud.cpp: Setting the seed to be a random draw from a uniform
+ 	instead of it being randomized independenlty from R
+	* Adding new unit tests.
+2015-07-19 Version: 5.7-12.4
+	* genoud.R: creating visible binding for variable "indx"
+
+2015-07-18 Version: 5.7-12.3
+	* genoud.R: import non-base functions explicitly
+
+2015-07-17 Version: 5.7-12.2
+	* DESCRIPTION: improves description
+
+2013-06-28 Version: 5.7-12.1
+	* test.R: suppress message on load
+
+2013-06-28 Version: 5.7-12
+	* genoud.Rd: Updated the documentation to reflect the usage of the
+	'parallel' package instead of the deprecated package 'snow'
+	* vignettes: moved vignettes from /inst/doc to /vignettes.
+
+2013-06-28 Version: 5.7-10
+	* genoud.R: now uses the 'parallel' package instead of the
+	deprecated package 'snow'
+
+2013-06-27 Version: 5.7-9.2
+	* evaluate.cpp: JaIntegerOptimization(), Correct memory
+	issue. When reading in an old population file a segmentation fault
+	could result when an old population file was read that had a
+	larger population than the new population. Issue only arose for
+	integer optimization.
+
+2013-05-06 Version: 5.7-9.1
+	* operators.cpp: oper5(), Simple Crossover, always hit the maximum
+	unique individual limit. Corrected the logic to only check for
+	unique children in the crossover portion.  Note that this makes
+	results different from previous versions even if the random number
+	seeds are set.
+
+2012-06-03 Version: 5.7-8
+	* rgenoud.R: Added the following options back in for backward
+	compatibility, but a warning is printed if they are used:
+	output.path and output.append. Please use 'sink' instead.
+
+2012-06-03 Version: 5.7-7
+	* rgenoud.R: Call to optimHess() now explicitly names the arguments to be matched.
+
+2012-06-03 Version: 5.7-6
+	* evaluate.cpp: output streams are no longer flushed because of
+	R's rules about calling stdout.
+	* rgenoud.pdf: has been compacted to save space.
+	* .Rinstignore: new file has been added to sure that
+	inst/doc/Figures are not installed to save space.
+
+2012-06-03 Version: 5.7-5
+
+	* rgenoud.R: Because of the switch to Rprintf (see below), the
+	'output.path' and 'output.append' options have been removed.
+	* evaluate.cpp: Routed printing calls through Rprintf rather than
+	fprintf. Made sure all error handling is done by R's error()
+	function. Many cpp files affected: genoud.cpp, genoud.h,
+	gradient.cpp, operators.cpp, math.cpp, numerics.cpp,
+	print_format.cpp.
+
+2012-06-02 Version: 5.7-4
+
+	* rgenoud.R: Removes calls to .Internal(optimhess). Now calls optimHess().
+	* zzz.R: Now uses packageStartupMessage() to display .onAttach message.
+
+2011-05-04 Version: 5.7-3
+
+	* rgenoud.Rd: Update for Journal of Statistical Software
+	* inst/CITATION: Final update for Journal of Statistical Software
+
+2011-04-16 Version: 5.7-2
+
+	* inst/CITATION: Updated for Journal of Statistical Software
+
+2010-08-26 Version: 5.7-1
+
+	* operators.cpp: Fixed boundary issue for integer optimization
+	(when 'data.type.int=TRUE') created by changes in the GNU CC
+	compiler, operators P3,P4,P5,P7 were affected.
+	* evaluate.cpp: See above and corrected printing of population means and variances when doing integer optimization.
+	* genound.h: See above
+	* print_format.cpp: Changed longs to ints to prevent warnings produced by the call to fscanf() in the ReadPopulation() file.
+
+2010-06-01  Version: 5.6-7
+
+	* rgenoud.R: Improved handling of the parent environment when 	the 'transform' option is used
+	* operators.ccp: Fixed boundary issue for the integer version of the Polytope Crossover operator (P5 and function JaIntegeroper4).
+
+2009-08-14  Version: 5.6-6
+
+	* rgenoud.Rd: Improved the documentation of the 'transform' option.
+
+2009-08-07  Version: 5.6-5
+
+	* rgenoud.Rnw: created vignette file to generate rgenoud.pdf,
+          rgenoud.tex and rgenoud.R. Support files also added---i.e.,
+          rgenoud.bib and figures in the inst/doc/Figures directory
+          added.
+
+	* COPYRIGHTS: file added
+
+	* COPYING: file added
+
+	* THANKS: file added
+
+2009-08-06  Version: 5.6-4 
+
+	* evaluate.cpp: Adds boundary checking for the parameters returned
+	by the 'transform' option.  For the transform option, only         checks bounds in generation 0 because of computational efficiency
+	concerns. The standard bounds checking remains unchanged.
+
+	* genoud.Rd: Documentation updated to reflect above.
+
+2009-08-04  Version: 5.6-3 
+
+	* print_format.cpp: Corrects issue when 'share.type=1' and
+	'starting.values' are provided. 
+
+	* evaluate.cpp and multiple other files: Some warning messages are
+	now simply notes.
+ 
+2009-08-03  Version: 5.6-2 
+
+	* multiple files: optim() can now be called by any valid method
+	using the 'optim.method' option: namely one of "BFGS", "L-BFGS-B",
+	"Nelder-Mead", "CG", or "SANN".
+
+	* rgenoud.R: The error checking of user provided starting 	values has been improved.
+
+2009-08-03  Version: 5.6-1 
+
+	* multiple files: Major revision. Adds the transform option 	which is required by the FAiR package by Ben Goodrich
+	<goodrich@fas.harvard.edu>.  
+
+	* pint_format.cpp: share.type=1 works correctly again.  
+
+	* multiple files: Printing is cleaning up when share.type=1, 	and relevant warning messages are improved.
+
+2009-03-13  Version: 5.5-1 
+
+	* genoud.Rd: Corrected formatting issues in the help page. 
+
+	* evaluate.cpp: Corrected overloading ambiguity between
+	"std::fmod(double, double)" and "std::fmod(long double, long
+	double)" which prevented building on Solaris.
+
+2008-01-04  Version: 5.4-7
+
+	* evaluate.cpp, rgenoud.cpp: The 'BFGSburnin' option may now be
+	set to a negative value.  If \code{BFGSburnin < 0}, the BFGS will
+	be used if and when \code{wait.generations} is doubled because at
+	least one gradient is too large, which can only occur when
+	\code{gradient.check = TRUE}. Note that 'BFGSburnin' was an option
+	added in version 5.3-3. Premature use of the BFGS can lead to
+	convergence to a local minimum instead of the global one.  This
+	option allows the user to control how many generations are run
+	before the BFGS is started.  This option delays the use of both
+	the BFGS on the best individual and of the P9 operator.
+
+	* multiple files: Better interrupt handling. When genoud is
+	interrupted, it now prints a message on how to recover the best
+	individual found so far.
+
+	* multiple files: Helper function of analytical gradients is
+	enabled.  Better checking to make sure that input parameters are
+	legal.  
+
+	* rgenoud.R and other files: User may now pass in "control" (a
+	list of control parameters) for optim including control$fnscale.
+
+	* rgenoud.Rd: Updated rgenoud.Rd project.path description. It is
+	now noted in genoud.Rd that with boundary.enforcement=2, no
+	out-of-bounds evaluations will ever be requested. In this case,
+	boundary enforcement is also applied to the BFGS algorithm, which
+	prevents candidates from straying beyond the bounds defined by
+	\code{Domains}. Note that this forces the use of the "L-BFGS-B"
+	algorithm for \code{\link[stats]{optim}}.  This algorithm requires
+	that all fit values and gradients be defined and finite for all
+	function evaluations.  If this causes an error, it is suggested
+	that the "BFGS" algorithm be used instead by setting
+	\code{boundary.enforcement=1}.
+
+2007-11-19  Version: 5.3-4
+
+	* multiple files: Made some changes for the Portland Group
+	Compiler (pgCC).  Converted some longs to ints.
+
+
+2007-10-18  Version: 5.3-3
+
+	* multiple files: A number of starting values can now be provided
+	by passing a matrix to the 'starting.values' option.
+
+	* multiple files: A new option has been added named 'BFGSburnin'
+	which control the number of generations which are run before the
+	BFGS is first used. Premature use of the BFGS can lead to
+	convergence to a local minimum instead of the global one.  This
+	option allows the user to control how many generations are run
+	before the BFGS is started.  This option delays the use of both
+	the BFGS on the best individual and of the P9 operator.
+
+	* rgenoud.R: The dimensions of the 'Domains' object are now
+	checked both if they have the correct number of dimensions and if
+	the values are sane.
+
+	* evaluate.cpp and other files: Fixed warnings in gcc >4.2:
+	evaluate.cpp:304: warning: deprecated conversion from string
+	constant to 'char*'
+
+	* evaluate.cpp: Fixed a MemoryMatrix issue with
+	data.type.int=TRUE. MemoryMatrix now gives the same results as
+	!MemoryMatrix.  The issues was that the number of UniquePairs that
+	were hunted down for P6 and P8 were different between the two
+	setups.
+
+2007-08-04  Version: 5.1-14
+
+	* multiple files: Minor changes.  Changed #includes so that the
+	package now compiles with Sun Studio compilers: extern "C" is not
+	needed for R header files. Added a regression suite to the "tests"
+	directory.
+
+2007-03-23  Version: 5.1-9
+
+	Major changes: 
+
+	* multiple files: Lexical searching now allows for one of the fit
+	functions to be optimized by the derivative based optimizer.  This
+	functionality is made available via the "BFGSfn" option.  Also see
+	the "BFGShelp" option.
+
+	* multiple files: The 9th operator which takes the convex
+	combination of the parent and its BFGS fit can now by tuned via
+	the "P9mix" option.  If this is set to equal 1, then the BFGS fit
+	is simply used.
+
+	Minor changes:
+
+	* multiple files: If BFGS results in out-of-bounds individuals,
+	warning is only printed if print.level > 1
+
+
+2007-02-20  Version: 5.0-5
+
+	* zzz.R: Prints version and build date on load.
+
+	* rgenoud.R: If starting values are provided and the lexical
+	option is TRUE, then the starting values instead of domains[,1]
+	are used to figure out how many return fits the function provides.
+
+2007-02-11  Version: 5.0-2
+
+	* genoud.Rd: Improved documentation file.
+
+2007-01-30  Version: 5.0-1
+
+	* evaluate.cpp: remove needless if statement in evaluate.cpp
+
+
+2007-01-30  Version: 5.0-0
+
+	* genoud.Rd: Multiple point crossover now accurately called simple crossover in docs
+
+	* operators.cpp: corrected whole mutation to actually do whole mutation
+
+	* evaluate.cpp: fixed minor no improvement bug which involved going from gen0 to gen1
+
+	* multiple files: simplified printing
+
+
+	Copyright 1997-2012 Walter R. Mebane, Jr. and Jasjeet S. Sekhon.
+	Copying and distribution of this file, without modification, are
+	permitted provided the copyright notice and this notice are
+	preserved.

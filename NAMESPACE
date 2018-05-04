@@ -1,0 +1,3 @@
+#useDynlib(rgenoud)
+importFrom("stats", "runif")
+export(genoud)
