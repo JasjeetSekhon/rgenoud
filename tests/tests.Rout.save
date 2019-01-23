@@ -1,7 +1,7 @@
 
-R version 3.2.1 (2015-06-18) -- "World-Famous Astronaut"
-Copyright (C) 2015 The R Foundation for Statistical Computing
-Platform: x86_64-apple-darwin13.4.0 (64-bit)
+R version 3.5.1 (2018-07-02) -- "Feather Spray"
+Copyright (C) 2018 The R Foundation for Statistical Computing
+Platform: x86_64-apple-darwin15.6.0 (64-bit)
 
 R is free software and comes with ABSOLUTELY NO WARRANTY.
 You are welcome to redistribute it under certain conditions.
@@ -73,90 +73,7 @@ $operators
 [1] 122 125 125 125 125 126 125 126   0
 
 > 
-> #maximize a univariate normal mixture which looks like a claw
-> claw <- function(xx) {
-+   x <- xx[1]
-+   y <- (0.46*(dnorm(x,-1.0,2.0/3.0) + dnorm(x,1.0,2.0/3.0)) +
-+         (1.0/300.0)*(dnorm(x,-0.5,.01) + dnorm(x,-1.0,.01) + dnorm(x,-1.5,.01)) +
-+         (7.0/300.0)*(dnorm(x,0.5,.07) + dnorm(x,1.0,.07) + dnorm(x,1.5,.07))) 
-+   return(y)
-+ }
-> claw1   <- genoud(claw, nvars=1,pop.size=3000,max=TRUE, unif.seed=912821, int.seed=93058, print.level=0)
-> claw1$value <- signif(claw1$value,6)
-> claw1$par <- signif(claw1$par,6)
-> claw1$gradients <- signif(claw1$gradients,6)
-> print(claw1)
-$value
-[1] 0.411312
-
-$par
-[1] 0.999503
-
-$gradients
-[1] -1.27716e-06
-
-$generations
-[1] 11
-
-$peakgeneration
-[1] 1
-
-$popsize
-[1] 3000
-
-$operators
-[1] 372 375 375 375 375 376 375 376   0
-
-> 
-> # Maximize a bivariate normal mixture which looks like a claw.
-> biclaw <- function(xx) {
-+   mNd2 <- function(x1, x2, mu1, mu2, sigma1, sigma2, rho)
-+     {
-+       z1 <- (x1-mu1)/sigma1
-+       z2 <- (x2-mu2)/sigma2
-+       w <- (1.0/(2.0*pi*sigma1*sigma2*sqrt(1-rho*rho))) 
-+       w <- w*exp(-0.5*(z1*z1 - 2*rho*z1*z2 + z2*z2)/(1-rho*rho)) 
-+       return(w)
-+     }
-+   x1 <- xx[1]+1
-+   x2 <- xx[2]+1
-+   
-+   y <- (0.5*mNd2(x1,x2,0.0,0.0,1.0,1.0,0.0) +
-+         0.1*(mNd2(x1,x2,-1.0,-1.0,0.1,0.1,0.0) +
-+              mNd2(x1,x2,-0.5,-0.5,0.1,0.1,0.0) +
-+              mNd2(x1,x2,0.0,0.0,0.1,0.1,0.0) +
-+              mNd2(x1,x2,0.5,0.5,0.1,0.1,0.0) +
-+              mNd2(x1,x2,1.0,1.0,0.1,0.1,0.0)))
-+   
-+   return(y)
-+ }
-> biclaw1 <- genoud(biclaw, default.domains=20, nvars=2,pop.size=5000,max=TRUE, unif.seed=912821, int.seed=93058, print.level=0)
-> biclaw1$value <- signif(biclaw1$value,6)
-> biclaw1$par <- signif(biclaw1$par,6)
-> biclaw1$gradients <- signif(biclaw1$gradients,6)
-> print(biclaw1)
-$value
-[1] 1.67113
-
-$par
-[1] -1 -1
-
-$gradients
-[1]  2.49105e-08 -3.42757e-08
-
-$generations
-[1] 12
-
-$peakgeneration
-[1] 1
-
-$popsize
-[1] 5000
-
-$operators
-[1] 622 625 625 625 625 626 625 626   0
-
 > 
 > proc.time()
    user  system elapsed 
-  6.218   0.141   6.384 
+  0.508   0.045   0.537 
