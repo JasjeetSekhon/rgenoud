@@ -542,27 +542,6 @@ void find_rangeInt(int *llim, int *ulim, int comp, double **domains, int nvars, 
 
 /********************************************************************************/
 /*                                                                              */
-/*           FUNCTION NAME     :   irange_ran()                                 */
-/*                                                                              */
-/*           SYNOPSIS          :   int irange_ran(llim,ulim)                    */
-/*                                                                              */
-/*           DESCRIPTION       :   This function returns a random integer       */
-/*                                  between the llim and ulim.                  */
-/*                                                                              */
-/********************************************************************************/
-int irange_ran(int llim, int ulim)
-{
-  int num;
-
-  do
-    num =  llim + ((int) ((newrand()*(long)(ulim-llim+1))/(long) 65535));
-  while ((num < llim) || (num > ulim));
-  return(num);
-}
-
-
-/********************************************************************************/
-/*                                                                              */
 /*           FUNCTION NAME     :   get_F()                                      */
 /*                                                                              */
 /*           SYNOPSIS          :   double get_F(T,t,y,B)                         */

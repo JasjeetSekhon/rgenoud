@@ -50,7 +50,7 @@ extern "C"
 #define DOS_SYS  FALSE           /* set to true for dos, false for unix */
 #define UNIX_SYS TRUE            /* set to true for unix, false for dos */
 
-#define flip()  ((int) ((newrand()*(long)2)/(long) 65535))
+#define flip()  ((int) (irange_ran((int) 0, (int) 1))) // Modify coin flip to use irange_ran
 #define MIN -32768
 #define MAX 32768
 #define HEAD 1
@@ -195,10 +195,9 @@ void JaDoubleSort(double **InMatrix, long n, long k);
 int JaDoubleCMP(double **a, double **b) ;
 
 /* frange_ran.c */
-double newunif(void);
 double frange_ran(double llim, double ulim);
-unsigned int randint(void);
-unsigned int newrand(void);
+int irange_ran(int llim, int ulim);
+
 
 /* math.c */
 /* Not needed here.  In here for completeness! */

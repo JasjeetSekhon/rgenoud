@@ -14,14 +14,15 @@
 
   June 3, 2012
 */
-
+#include <random>
 #include "genoud.h"
-#include "unif.h"
 
-/* unif.h integer definition */
+/* frange_ran integer definition */
 int NewUnifSeed[MAXTHREADS];
 int RandIntSeed[MAXTHREADS];
 int ThreadNumber;
+std::mt19937 mt_engine_int;
+std::mt19937 mt_engine_unif;
 
 extern double func4g(double *X);
 
@@ -31,6 +32,8 @@ void genoud(struct GND_IOstructure *Structure)
   extern int NewUnifSeed[MAXTHREADS];
   extern int RandIntSeed[MAXTHREADS];
   extern int ThreadNumber;
+  extern std::mt19937 mt_engine_int;
+  extern std::mt19937 mt_engine_unif;
 
   MATRIX 
     domains,      /*Matrix for Domains*/
@@ -104,7 +107,11 @@ void genoud(struct GND_IOstructure *Structure)
     ThreadNumber = 0;
  }
   
-
+  // Now need to initialize the std::mt19937 objects
+  mt_engine_int.seed(RandIntSeed[ThreadNumber]);
+  mt_engine_unif.seed(NewUnifSeed[ThreadNumber]);
+  
+  
   fin.r =   Structure->nvars;            /*total number of inequalities + domains*/
   fin.c =   Structure->nvars+2;          /*x2 variables + lower limits + upper limits*/
 

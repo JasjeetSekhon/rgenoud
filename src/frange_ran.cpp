@@ -15,28 +15,10 @@
   $Header: /home/jsekhon/xchg/genoud/rgenoud.distribution/sources/RCS/frange_ran.cpp,v 2.15 2005/10/29 06:14:44 jsekhon Exp jsekhon $
 
 */
-
+#include <random>
 #include "genoud.h"
 
 /* replacements for random number functions in GENOCOP's frange_ran.c */
-
-#include "unif.h"
-
-
-double newunif(void)
-{
-  extern int NewUnifSeed[MAXTHREADS];
-  extern int ThreadNumber;
-  /*  static integer aux[TLPAUXSIZE], iseed = NEWUNIFSEED ;*/
-  static integer aux[TLPAUXSIZE];
-  double wrkout;
-  double wrk;
-
-  /* get a random uniform double on (0,1] */
-  ruxorv (&NewUnifSeed[ThreadNumber], 1, &wrk, aux);
-  wrkout = (double) wrk;
-  return(wrkout);
-}
 
 double frange_ran(double llim, double ulim)
      /*
@@ -44,46 +26,35 @@ double frange_ran(double llim, double ulim)
        double llim;
      */
 {
+  // Define the mersenne twister 19937 generator seeded with NewUnifSeed[ThreadNumber]
+  extern std::mt19937 mt_engine_unif;
+  
+  // Create a uniform real distribution on [0,1]
+  std::uniform_real_distribution<double> unif_dist(llim, ulim);
+  
+  double generated_num = unif_dist(mt_engine_unif);
 
-  /*llim, ulim:  The upper and lower limits between which the random
-      number is to be generated*/
-
-  double num1, diff = ulim - llim;
-
-  if (diff == 0)
-    return(llim);
-  else if(diff < 0.0001)
-    return((flip() == TAIL) ? llim : ulim);
-  do {
-//      printf("num1: %lf, ulim: %lf, llim: %lf\n",num1,ulim,llim); 
-//      fflush(stdout);
-      num1 = llim +  newunif()*(ulim-llim) ;
-  }
-  while((num1<llim)||(num1>ulim));
-
-//  printf("fr2\n"); 
-//  fflush(stdout);
-  return(num1);
+  return(generated_num);
 }
 
-unsigned int randint (void)
+/********************************************************************************/
+/*                                                                              */
+/*           FUNCTION NAME     :   irange_ran()                                 */
+/*                                                                              */
+/*           SYNOPSIS          :   int irange_ran(llim,ulim)                    */
+/*                                                                              */
+/*           DESCRIPTION       :   This function returns a random integer       */
+/*                                  between the llim and ulim.                  */
+/*                                                                              */
+/********************************************************************************/
+int irange_ran(int llim, int ulim)
 {
-  extern int RandIntSeed[MAXTHREADS];
-  extern int ThreadNumber;
-  /*  static integer aux[TLPAUXSIZE], iseed = RANDINTSEED ; */
-  static integer aux[TLPAUXSIZE];
-  integer wrk;
-  int num;
+  extern std::mt19937 mt_engine_int;
+  
+  // Create a uniform int distribution on [llim,ulim]
+  std::uniform_int_distribution<int> unif_int_dist(llim, ulim);
 
-  /* get a signed 32-bit number from the TLP generator */
-  tlpseq (&RandIntSeed[ThreadNumber], 1, &wrk, aux);
-  /* truncate to 16 bits */
-  num = wrk%65535;
-  return (num);
+  int generated_int = unif_int_dist(mt_engine_int);
+  
+  return(generated_int);
 }
-
-unsigned int newrand (void)
-{
-  return (randint());
-}
-
