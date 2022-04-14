@@ -51,6 +51,7 @@ test_that("Tests the old version of genoud() where the seed are given", {
     )
   expect_equal(claw1$value, 0.4113123, tolerance=1e-6)
   expect_equal(claw1$par, 0.9995032, tolerance=1e-6)
+  skip_if_not_mac()
   expect_equal(claw1$gradients, -1.277157e-06, tolerance=1e-6)
 
   # Maximize a bivariate normal mixture which looks like a claw.
