@@ -12,5 +12,5 @@ Description: A genetic algorithm plus derivative optimizer.
 Depends: R (>= 2.15), utils
 Suggests: testthat
 License: GPL-3
-URL: http://sekhon.berkeley.edu/rgenoud/
+URL: https://github.com/JasjeetSekhon/rgenoud
 NeedsCompilation: yes

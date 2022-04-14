@@ -491,7 +491,7 @@
   information is useful for such problems.  \code{Genoud} also works
   well for problems that no derivative information exists. For
   additional documentation and examples please see
-  \url{http://sekhon.berkeley.edu/rgenoud}.}
+  \url{https://sekhon.berkeley.edu/rgenoud}.}
 
 \value{\code{genoud} returns a list
   with 7 objects.  8 objects are returned if the user has requested
@@ -598,7 +598,7 @@
   Mebane, Walter R., Jr. and Jasjeet S. Sekhon.  2011.  "Genetic
   Optimization Using Derivatives: The rgenoud Package for R."
   \emph{Journal of Statistical Software}, 42(11):  1-26. 
-  \url{http://www.jstatsoft.org/v42/i11/} \cr
+  \url{https://www.jstatsoft.org/v42/i11/} \cr
   
   Sekhon, Jasjeet Singh and Walter R. Mebane, Jr. 1998.  ``Genetic
   Optimization Using Derivatives: Theory and Application to Nonlinear
