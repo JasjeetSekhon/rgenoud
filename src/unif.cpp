@@ -138,7 +138,13 @@ void tauint (integer *ix)
   /* lower-order bits are done.  now do the rest */
   i = j;
   /* do the left shift */
-  j <<= 18;
+  
+  // Helper int to avoid signed int issue
+  unsigned int j_us = (unsigned int) j;
+  j_us <<= 18;
+  j = (int) j_us;
+  
+  // Changed to check the sign of i since j was cast to unsigned
   /* exclusive-or, handling cases where the left shift makes j negative */
-  *ix = j<0 ? i^(-j) : i^j ;
+  *ix = i<0 ? i^(-j) : i^j ;
 }
