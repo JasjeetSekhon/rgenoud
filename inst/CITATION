@@ -9,7 +9,7 @@ citEntry(entry = "Article",
   volume       = "42",
   number       = "11",
   pages        = "1--26",
-  url          = "http://www.jstatsoft.org/v42/i11/",
+  url          = "https://www.jstatsoft.org/v42/i11/",
 
   textVersion  =
   paste("Walter R. Mebane, Jr.,  Jasjeet S. Sekhon (2011).",

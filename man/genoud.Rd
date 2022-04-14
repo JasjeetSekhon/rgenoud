@@ -491,7 +491,7 @@
   information is useful for such problems.  \code{Genoud} also works
   well for problems that no derivative information exists. For
   additional documentation and examples please see
-  \url{https://sekhon.berkeley.edu/rgenoud}.}
+  \url{http://sekhon.berkeley.edu/rgenoud/}.}
 
 \value{\code{genoud} returns a list
   with 7 objects.  8 objects are returned if the user has requested
