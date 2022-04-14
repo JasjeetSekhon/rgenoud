@@ -246,10 +246,12 @@
     When this flag is set to \code{TRUE}, \code{genoud} will return the
     hessian matrix at the solution as part of its return list.  A user
     can use this matrix to calculate standard errors.}
-  \item{unif.seed}{This should not be set. To set the seed, one should use 
-  	the \code{set.seed()} function directly. It only exists to ensure compatibility
-  	with functions which are used to call the older version of this function.}
-  \item{int.seed}{See \code{unif.seed}.}
+  \item{unif.seed}{An integer used to seed the random number generator for doubles
+  called in C++. If the user wants to have reproducibility for the output of 
+  genoud, both this and \code{int.seed} should be set.}
+  \item{int.seed}{An integer used to seed the random number generator for integers
+  called in C++. If the user wants to have reproducibility for the output of 
+  genoud, both this and \code{unif.seed} should be set.}
   \item{print.level}{
     This variable controls the level of printing that \code{genoud} does.  There
     are four possible levels: 0 (minimal printing), 1 (normal), 2

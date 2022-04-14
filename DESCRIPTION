@@ -1,9 +1,12 @@
 Package: rgenoud
-Version: 5.8-3.3
+Version: 5.9-0.0
 Date: 2022-04-14
 Title: R Version of GENetic Optimization Using Derivatives
-Author: Walter R. Mebane, Jr. <wmebane@umich.edu>,
- Jasjeet Singh Sekhon <jasjeet.sekhon@yale.edu> 
+Authors@R: c(
+    person("Walter", "R. Mebane, Jr", role = "aut", email = "wmebane@umich.edu"),
+    person("Jasjeet", "Singh Sekhon", role = c("aut","cre"), email = "jasjeet.sekhon@yale.edu"),
+    person("Theo", "Saarinen", role = "aut", email = "theo_s@berkeley.edu")
+    )
 Maintainer: Jasjeet Singh Sekhon <jasjeet.sekhon@yale.edu>
 Description: A genetic algorithm plus derivative optimizer.
 Depends: R (>= 2.15), utils

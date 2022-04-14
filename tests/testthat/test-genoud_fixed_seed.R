@@ -12,7 +12,7 @@ test_that("Tests the old version of genoud() where the seed are given", {
       print.level = 0
     )
   expect_equal(sin1$value, 1)
-  expect_equal(sin1$par, 7.85398, tolerance = 1e-6)
+  expect_equal(sin1$par, -4.712389, tolerance = 1e-6)
   expect_equal(sin1$gradients, sin1$gradients)
   
   #minimize the sin function
