@@ -248,10 +248,12 @@
     can use this matrix to calculate standard errors.}
   \item{unif.seed}{An integer used to seed the random number generator for doubles
   called in C++. If the user wants to have reproducibility for the output of 
-  genoud, both this and \code{int.seed} should be set.}
+  genoud, they should either set both this and \code{int.seed} or use 
+  \code{set.seed()} before calling \code{genoud} in R.}
   \item{int.seed}{An integer used to seed the random number generator for integers
   called in C++. If the user wants to have reproducibility for the output of 
-  genoud, both this and \code{unif.seed} should be set.}
+  genoud, they should either set both this and \code{unif.seed} or use 
+  \code{set.seed()} before calling \code{genoud} in R.}
   \item{print.level}{
     This variable controls the level of printing that \code{genoud} does.  There
     are four possible levels: 0 (minimal printing), 1 (normal), 2
