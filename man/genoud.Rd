@@ -584,7 +584,7 @@
   be placed in the fit function the user is going to have \code{genoud}
   maximize: \code{if ( (parm1 + parm2) >= 725) \{ return(-99999999) \}}.
   In this example, a very bad fit value is returned to \code{genoud} if the
-  linear constrain is violated.  \code{genoud} will then attempt to find
+  linear constraint is violated.  \code{genoud} will then attempt to find
   parameter values that satisfy the constraint. \cr
   
   Alternatively, one can use lexical optimization where the first criterion is a
