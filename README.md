@@ -12,7 +12,7 @@ problems for which derivatives do not exist.
 ## How to install
 
 A version is on CRAN. The latest development version can be installed directly from Github
-using [devtools](https://github.com/hadley/devtools). 
+using [devtools](https://github.com/r-lib/devtools). 
 
 ```R
 if (!require("devtools")) install.packages("devtools")
@@ -22,7 +22,5 @@ devtools::install_github("JasjeetSekhon/rgenoud")
 The package contains compiled code, and you must have a development
 environment to install the development version. (Use
 `devtools::has_devel()` to check whether you do.) If no development
-environment exists, Windows users download and install
-[Rtools](https://cran.r-project.org/bin/windows/Rtools/) and macOS
-users download and install
-[Xcode](https://itunes.apple.com/us/app/xcode/id497799835).
+environment exists, Windows users download and install Rtools and macOS
+users download and install Xcode.

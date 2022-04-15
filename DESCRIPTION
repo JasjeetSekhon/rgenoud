@@ -1,5 +1,5 @@
 Package: rgenoud
-Version: 5.9-0.0
+Version: 5.9-0.1
 Date: 2022-04-14
 Title: R Version of GENetic Optimization Using Derivatives
 Authors@R: c(
