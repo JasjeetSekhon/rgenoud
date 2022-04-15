@@ -249,11 +249,13 @@
   \item{unif.seed}{An integer used to seed the random number generator for doubles
   called in C++. If the user wants to have reproducibility for the output of 
   genoud, they should either set both this and \code{int.seed} or use 
-  \code{set.seed()} before calling \code{genoud} in R.}
+  \code{set.seed()} before calling \code{genoud} in R. See the note in the Note 
+  section below regarding backwards compatibility after Version 5.9-0.0.}
   \item{int.seed}{An integer used to seed the random number generator for integers
   called in C++. If the user wants to have reproducibility for the output of 
   genoud, they should either set both this and \code{unif.seed} or use 
-  \code{set.seed()} before calling \code{genoud} in R.}
+  \code{set.seed()} before calling \code{genoud} in R. See the note in the Note 
+  section below regarding backwards compatibility after Version 5.9-0.0.}
   \item{print.level}{
     This variable controls the level of printing that \code{genoud} does.  There
     are four possible levels: 0 (minimal printing), 1 (normal), 2
@@ -594,7 +596,10 @@
   ranked below all candidates where \code{ (parm1 + parm2) < 725} and within 
   these two groups, candidates will be ranked by their fit on the second 
   criterion. The optimal candidate is thus the one with the best fit on the
-  second criterion among candidates that satisfy this restriction.}
+  second criterion among candidates that satisfy this restriction.
+  
+  In Version 5.9-0.0 we have changed the implementation of the random number 
+  generator, so results from this version onward will not be backwards compatible.}
 \references{
 
   Mebane, Walter R., Jr. and Jasjeet S. Sekhon.  2011.  "Genetic
@@ -619,8 +624,10 @@
 \author{Walter R. Mebane, Jr., University of Michigan,
   \email{wmebane@umich.edu}, \url{http://www-personal.umich.edu/~wmebane/} \cr
   
-  Jasjeet S. Sekhon, UC Berkeley, \email{sekhon@berkeley.edu},
-  \url{http://sekhon.berkeley.edu/}}
+  Jasjeet S. Sekhon, Yale University, \email{jas.sekhon@yale.edu},
+  \url{https://github.com/JasjeetSekhon/rgenoud} \cr
+  
+  Theo Saarinen, UC Berkeley, \email{theo_s@berkeley.edu}}
 \seealso{
   \code{\link[stats]{optim}}.
 }
