@@ -1,6 +1,6 @@
 Package: rgenoud
-Version: 5.9-0.1
-Date: 2022-04-14
+Version: 5.9-0.2
+Date: 2022-04-18
 Title: R Version of GENetic Optimization Using Derivatives
 Authors@R: c(
     person("Walter", "R. Mebane, Jr", role = "aut", email = "wmebane@umich.edu"),

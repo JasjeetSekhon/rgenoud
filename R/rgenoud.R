@@ -14,13 +14,13 @@
 
 
 genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wait.generations=10,
-                   hard.generation.limit=TRUE, starting.values=NULL, MemoryMatrix=TRUE, 
+                   hard.generation.limit=TRUE, starting.values=NULL, MemoryMatrix=TRUE,
                    Domains=NULL, default.domains=10, solution.tolerance=0.001,
-                   gr=NULL, boundary.enforcement=0, lexical=FALSE, gradient.check=TRUE, BFGS=TRUE, 
-                   data.type.int=FALSE, hessian=FALSE, unif.seed=round(runif(1, 1, 2147483647L)), 
+                   gr=NULL, boundary.enforcement=0, lexical=FALSE, gradient.check=TRUE, BFGS=TRUE,
+                   data.type.int=FALSE, hessian=FALSE, unif.seed=round(runif(1, 1, 2147483647L)),
                    int.seed=round(runif(1, 1, 2147483647L)),
                    print.level=2, share.type=0, instance.number=0,
-                   output.path="stdout", output.append=FALSE, project.path=NULL, 
+                   output.path="stdout", output.append=FALSE, project.path=NULL,
                    P1=50, P2=50, P3=50, P4=50, P5=50, P6=50, P7=50, P8=50, P9=0,
                    P9mix=NULL, BFGSburnin=0, BFGSfn=NULL, BFGShelp = NULL,
                    control = list(), optim.method=ifelse(boundary.enforcement < 2, "BFGS", "L-BFGS-B"),
@@ -45,15 +45,15 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
   #because R CMD check complains about calls to 'stdout'
   if (output.path!="stdout")
     {
-      output.path <- "stdout"              
+      output.path <- "stdout"
       warning("'output.path' can no longer be changed. Please use 'sink'. Option is only provided for backward compatibility of the API.")
     }
   if(output.append!=FALSE)
     {
       output.append <- FALSE
-      warning("'output.append' can no longer be changed. Please use 'sink'. Option is only provided for backward compatibility of the API.")      
+      warning("'output.append' can no longer be changed. Please use 'sink'. Option is only provided for backward compatibility of the API.")
     }
-  
+
   if(!is.null(P9mix) && !is.double(P9mix))  {
     stop("'P9mix' must be NULL or a number between 0 and 1")
   } else {
@@ -123,17 +123,21 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
     return(fit)
   }#end of fn1
 
+  gr1.bfgs <- function(par, helper = do.call(BFGShelp,
+                  args = list(initial = par, done = TRUE))) {
+    gr(par, helper, ...)
+  }#end of gr1.bfgs
+
+  gr1.std <- function(par) gr(par, ...)
+
   if(!is.null(BFGShelp)) {
       if (!is.null(gr)) {
-        gr1 <- function(par, helper = do.call(BFGShelp, 
-					args = list(initial = par, done = TRUE))) {
-				gr(par, helper, ...)
-			}
+          gr1 <- gr1.bfgs
       } else gr1 <- NULL
   }
-  else {  
+  else {
     if (!is.null(gr)) {
-           gr1 <- function(par) gr(par, ...)
+           gr1 <- gr1.std
     } else gr1 <- NULL
   }
 
@@ -142,7 +146,7 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
     {
       project.path <- file.path(tempdir(), "genoud.pro")
     }
-  
+
   #do we have stating values?
   if (is.null(starting.values)) {
     nStartingValues <- 0;
@@ -199,7 +203,7 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
           Domains[i,1] <- -1*default.domains;
           Domains[i,2] <- default.domains;
         } # end of for loop
-    } 
+    }
   else if(nrow(Domains) != nvars) {
     stop("number of rows in Domains must match 'nvars'")
   }
@@ -212,14 +216,14 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
   }
   if(any(Domains[,1] == Domains[,2])) {
     warning("some Domains[,1]==Domains[,2]")
-  }  
+  }
 
   # BG: now check all starting values are sane
   if(nStartingValues > 0 && any(is.na(starting.values))) {
 	stop("Some starting values are NA")
   }
-  if(nStartingValues > 0 && boundary.enforcement != 0 && 
-     !all(apply(starting.values, 1, FUN = function(x) 
+  if(nStartingValues > 0 && boundary.enforcement != 0 &&
+     !all(apply(starting.values, 1, FUN = function(x)
                Domains[,1] <= x & x <= Domains[,2])) )
         warning("'starting.values' which are outside of the bounds have been provided.
            Continuing, but unexpected behavior can occur with 'boundary.enforcement!=0'")
@@ -236,7 +240,7 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
       warning("lexical < 0.  Resetting to FALSE\n")
       lexical <- 0
     }
-  if (lexical>=1) 
+  if (lexical>=1)
     {
       #creating visible binding for variable "indx"; although it is
       #actually defined in fnLexicalSort() via an eval and paste
@@ -248,19 +252,19 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
         warning("'share.type' being set to 0 because of lexical optimization")
         share.type <- 0
       }
-      
+
       if(nStartingValues)
         {
-          foo <- fn1(starting.values[1,])          
+          foo <- fn1(starting.values[1,])
         } else {
           rfoo <- stats::runif(nrow(Domains), Domains[,1], Domains[,2])
           if(data.type.int)
             rfoo <- as.integer(round(rfoo))
-          foo <- fn1(rfoo)          
+          foo <- fn1(rfoo)
         }
 	foo.length <- length(as.vector(foo))
 	if(lexical > 1 && foo.length != lexical) {
-	  warning(paste("Function returns a vector of length", foo.length, 
+	  warning(paste("Function returns a vector of length", foo.length,
                         "\nbut you specified lexical =", lexical))
 	}
         if(foo.length == 1) {
@@ -280,50 +284,55 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
            gradient.check=FALSE
            if(hessian) {
              warning("'hessian' being set to false because of lexical optimization.  See 'BFGSfn' for workaround")
-             hessian=FALSE             
+             hessian=FALSE
            }
 
            P9 = 0
          } else {
-             if(!is.null(BFGShelp)) {
-               fn1.bfgs <-  function(par, helper = do.call(BFGShelp, 
-                                     args = list(initial = par, done = TRUE), 
+           fn1.bfgs.null <-  function(par) {
+             fit <- BFGSfn(par, ...)
+
+             if(is.null(fit)) fit <- FiniteBadFitValue
+
+             if(length(fit)==1) if(!is.finite(fit)) fit <- FiniteBadFitValue
+
+             return(fit)
+           }#end of fn1.bfgs.null definition
+
+           fn1.bfgs.std <-  function(par, helper = do.call(BFGShelp,
+                                     args = list(initial = par, done = TRUE),
                                      envir = environment(fn))) {
-                 fit <- BFGSfn(par, helper, ...) 
-             
-                 if(is.null(fit)) fit <- FiniteBadFitValue
-             
-                 if(length(fit)==1) if(!is.finite(fit)) fit <- FiniteBadFitValue
-             
-                 return(fit)
-               }#end of fn1.bfgs
+             fit <- BFGSfn(par, helper, ...)
+
+             if(is.null(fit)) fit <- FiniteBadFitValue
+
+             if(length(fit)==1) if(!is.finite(fit)) fit <- FiniteBadFitValue
+
+             return(fit)
+           }#end of fn1.bfgs definition
+
+             # Based on BFGShelp set fn1.bfgs to the correct of the two previous functions
+             if(!is.null(BFGShelp)) {
+               fn1.bfgs <- fn1.bfgs.std
              } else {
-               fn1.bfgs <-  function(par) {
-                 fit <- BFGSfn(par, ...) 
-             
-                 if(is.null(fit)) fit <- FiniteBadFitValue
-             
-                 if(length(fit)==1) if(!is.finite(fit)) fit <- FiniteBadFitValue
-             
-                 return(fit)
-               }#end of fn1.bfgs
+               fn1.bfgs <- fn1.bfgs.null
              } # end else
 
            if(is.null(gr)) {
              gr <- function(par, helper = NA, ...)
                {
                   gr.fn1.bfgs <- function(par, helper, FBFV) {
-                    fit <- if(is.null(BFGShelp)) BFGSfn(par, ...) else BFGSfn(par, helper, ...) 
-                    
+                    fit <- if(is.null(BFGShelp)) BFGSfn(par, ...) else BFGSfn(par, helper, ...)
+
                     if(is.null(fit))
                       fit <- FBFV
-                    
+
                     if(length(fit)==1)
                       if(!is.finite(fit))
                         fit <- FBFV
-                    
+
                     return(fit)
-                  }  # end of gr.fn1.bfgs               
+                  }  # end of gr.fn1.bfgs
                  genoud.wrapper101.env <- new.env()
                  assign("x", par, envir = genoud.wrapper101.env)
                  assign("helper", helper, envir = genoud.wrapper101.env)
@@ -759,24 +768,27 @@ genoud <- function(fn, nvars, max=FALSE, pop.size=1000, max.generations=100, wai
                   abstol = -Inf, reltol = sqrt(.Machine$double.eps), alpha = 1,
                   beta = 0.5, gamma = 2, REPORT = 10, type = 1, lmm = 5,
                   factr = 1e+07, pgtol = 0, tmax = 10, temp = 10)
-      
+
       nm <- names(gout[5:(nvars+4)])
-      
+
+      hess.fn.one <- function(par) fn1(par, ...)
+      hess.fn.null <- function(par, helper = help.stuff) fn1.bfgs(par, helper, ...)
+
       if(lexical == 1) {
-        hess.fn <- function(par) fn1(par, ...)
+        hess.fn <- hess.fn.one
         hess <- stats::optimHess(par=gout[5:(nvars+4)], fn=fn1, gr=gr1, control=con)
       }
       else {
-        help.stuff <- do.call(BFGShelp, args = list(initial = gout[5:(nvars+4)], done = TRUE), 
+        help.stuff <- do.call(BFGShelp, args = list(initial = gout[5:(nvars+4)], done = TRUE),
                               envir = environment(fn))
-        hess.fn <- function(par, helper = help.stuff) fn1.bfgs(par, helper, ...)
+        hess.fn <- hess.fn.null
         hess <- stats::optimHess(par=gout[5:(nvars+4)], fn=hess.fn, gr=NULL, control=con)
       }
-      
+
       hes <- 0.5 * (hess + t(hess))
       if (!is.null(nm)) dimnames(hes) <- list(nm, nm)
-      
-      
+
+
       ret <- list(value=value, par=par, gradients=gradients,
                   generations=gout[1], peakgeneration=gout[2], popsize=gout[3],
                   operators=operators,
@@ -893,17 +905,21 @@ genoud_transform <- function(fn, nvars, max=FALSE, pop.size=1000, max.generation
     return(fit)
   }
 
+  gr1.bfgs <- function(par, helper = do.call(BFGShelp,
+                       args = list(initial = par, done = TRUE))) {
+    gr(par, helper, ...)
+  }
+
+  gr1.std <- function(par) gr(par, ...)
+
   if(!is.null(BFGShelp)) {
       if (!is.null(gr)) {
-        gr1 <- function(par, helper = do.call(BFGShelp,
-					args = list(initial = par, done = TRUE))) {
-				gr(par, helper, ...)
-			}
+        gr1 <- gr1.bfgs
       } else gr1 <- NULL
   }
   else {
     if (!is.null(gr)) {
-           gr1 <- function(par) gr(par, ...)
+      gr1 <- gr1.std
     } else gr1 <- NULL
   }
 
@@ -1027,28 +1043,32 @@ genoud_transform <- function(fn, nvars, max=FALSE, pop.size=1000, max.generation
 
            P9 = 0
          } else {
+            fn1.bfgs.std <-  function(par, helper = do.call(BFGShelp,
+                                                        args = list(initial = par, done = TRUE),
+                                                        envir = environment(fn))) {
+              fit <- BFGSfn(par, helper, ...)
+
+              if(is.null(fit)) fit <- FiniteBadFitValue
+
+              if(length(fit)==1) if(!is.finite(fit)) fit <- FiniteBadFitValue
+
+              return(fit)
+            }#end of fn1.bfgs
+
+            fn1.bfgs.null <-  function(par) {
+                fit <- BFGSfn(par, ...)
+
+                if(is.null(fit)) fit <- FiniteBadFitValue
+
+                if(length(fit)==1) if(!is.finite(fit)) fit <- FiniteBadFitValue
+
+                return(fit)
+             }#end of fn1.bfgs
+
              if(!is.null(BFGShelp)) {
-               fn1.bfgs <-  function(par, helper = do.call(BFGShelp,
-                                     args = list(initial = par, done = TRUE),
-                                     envir = environment(fn))) {
-                 fit <- BFGSfn(par, helper, ...)
-
-                 if(is.null(fit)) fit <- FiniteBadFitValue
-
-                 if(length(fit)==1) if(!is.finite(fit)) fit <- FiniteBadFitValue
-
-                 return(fit)
-               }#end of fn1.bfgs
+               fn1.bfgs <- fn1.bfgs.std
              } else {
-               fn1.bfgs <-  function(par) {
-                 fit <- BFGSfn(par, ...)
-
-                 if(is.null(fit)) fit <- FiniteBadFitValue
-
-                 if(length(fit)==1) if(!is.finite(fit)) fit <- FiniteBadFitValue
-
-                 return(fit)
-               }#end of fn1.bfgs
+               fn1.bfgs <- fn1.bfgs.null
              } # end else
 
            if(is.null(gr)) { ## should we do numerical gradients when transform = TRUE?
