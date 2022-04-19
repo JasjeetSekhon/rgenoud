@@ -7,7 +7,7 @@
   http://macht.arts.cornell.edu/wrm1
   <wrm1@macht.arts.cornell.edu>
 
-  Jasjeet Singh Sekhon 
+  Jasjeet Singh Sekhon
   UC Berkeley
   http://sekhon.polisci.berkeley.edu
   <sekhon@berkeley.edu>
@@ -32,12 +32,12 @@ extern "C"
   void EvaluateLexical(SEXP fn, SEXP rho,
 		       double *X, long nvars, long lexical, short int MinMax, double *ret);
   void EvaluateTransform(SEXP fn, SEXP rho,
-		       double *X, long nvars, long lexical, short int MinMax, double *ret);  
+		       double *X, long nvars, long lexical, short int MinMax, double *ret);
 } /*end of extern C */
 
 #define M(ROW,COL,NCOLS) (((ROW)*(NCOLS))+(COL))
 #define EVALUATE -645271937
-#define DOUBLEMAX DOUBLE_XMAX
+#define DOUBLEMAX DBL_MAX
 #define MAXPATH 1000
 #define MAXTHREADS 20
 #define MAXINSTANCES 20
@@ -89,7 +89,7 @@ struct GND_IOstructure
   long		nvars;
   long		PopSize;
   long		MaxGenerations;
-  long		WaitGenerations; 
+  long		WaitGenerations;
   double	P[9];		  /* Operators */
   double	**Domains;
   short		MinMax;
@@ -114,8 +114,8 @@ struct GND_IOstructure
   long          IntSeed;
 
   /* --- Ouput Diagnostics --- */
-  double	*oFitValues; 
-  double	*oResults; 
+  double	*oFitValues;
+  double	*oResults;
   double	*oGradients;
   long		oP[9];				/* operators used */
   long		oGenerations;
@@ -168,7 +168,7 @@ void find_final_mat2(MATRIX newin, int r, int c, int finr, MATRIX finmat);
 void find_final_mat3(MATRIX orgin, int r, int c, int finr, MATRIX finmat);
 
 /* evaluate.c */
-void optimization(struct GND_IOstructure *Structure, VECTOR X, 
+void optimization(struct GND_IOstructure *Structure, VECTOR X,
 		    MATRIX domains);
 void sort(short int MinMax, MATRIX  population, int pop_size,
 	  long nvar);
@@ -179,15 +179,15 @@ double x_pow_y(double x, int y);
 void find_cum_probab(VECTOR cum_probab, VECTOR probab, int pop_size);
 void find_live(VECTOR cum_probab, IVECTOR live, int pop_size, int P);
 int find_die(VECTOR cum_probab, IVECTOR die, int pop_size);
-void SetRunTimeParameters(struct GND_IOstructure *Structure, 
+void SetRunTimeParameters(struct GND_IOstructure *Structure,
 			  short FirstTime,
 			  long *PopSize, long *nvars, long *MaxGenerations, long *WaitGenerations,
 			  short *MinMax, short *GradientCheck, short *BoundaryEnforcement, short *UseBFGS,
 			  double *SolutionTolerance,
-			  long *InstanceNumber, long *P, long *P0, long *P1, long *P2, long *P3, long *P4, long *P5, 
-			  long *P6, long *P7, long *P8, short *PrintLevel, 
+			  long *InstanceNumber, long *P, long *P0, long *P1, long *P2, long *P3, long *P4, long *P5,
+			  long *P6, long *P7, long *P8, short *PrintLevel,
 			  short *HardGenerationLimit);
-void JaIntegerOptimization(struct GND_IOstructure *Structure, VECTOR X, 
+void JaIntegerOptimization(struct GND_IOstructure *Structure, VECTOR X,
 			     MATRIX domains);
 void JaIntegerSort(double **InMatrix, long n, long k);
 int JaIntegerCMP(double **a, double **b) ;
@@ -212,9 +212,9 @@ double trace(double *a, int n);
 void transpose(double *orig_matrix, double *t_matrix, int orig_rows, int orig_columns);
 void copy_matrix(MATRIX mat1, MATRIX mat2, int lr, int ur, int lc, int uc);
 int Iround(double in);
-void samplestats(double **obsdata, int numobsv, int novarsv, int weightflag, 
+void samplestats(double **obsdata, int numobsv, int novarsv, int weightflag,
 		 double *weightdata);
-void populationstats(double **popdata, int numobsv, int novarsv, 
+void populationstats(double **popdata, int numobsv, int novarsv,
 		     double *mean, double *var, double *skew, double *kur,
 		     long *tobs);
 
@@ -247,9 +247,9 @@ void oper5(VECTOR p1, VECTOR p2, int STEP, double **domains, int nvars);
 void oper6(VECTOR parent, double **domains, int nvars, int T, int t, int B);
 void oper7(VECTOR p1, VECTOR p2, double **domains, int nvars);
 void oper8(SEXP fn, SEXP rho,
-	   VECTOR parent, MATRIX domains, 
-	   double SolutionTolerance, long nvars, 
-	   short BoundaryEnforcement, 
+	   VECTOR parent, MATRIX domains,
+	   double SolutionTolerance, long nvars,
+	   short BoundaryEnforcement,
 	   short PrintLevel, double mix);
 void find_range(double *llim, double *ulim, int comp, double **domains, int nvars, VECTOR parent);
 void find_rangeInt(int *llim, int *ulim, int comp, double **domains, int nvars, VECTOR parent);
