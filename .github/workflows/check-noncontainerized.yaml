@@ -45,8 +45,6 @@ jobs:
 
       - uses: r-lib/actions/setup-pandoc@v1
 
-      - uses: r-lib/actions/setup-tinytex@master
-
       - name: Query dependencies
         run: |
           install.packages('remotes')
@@ -81,8 +79,8 @@ jobs:
           _R_CHECK_CRAN_INCOMING_REMOTE_: false
         run: |
           options(crayon.enabled = TRUE)
-          rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran", "--no-multiarch"),
-          build_args = c("--ignore-vignettes"), error_on = "warning", check_dir = "check")
+          rcmdcheck::rcmdcheck(args = c("--no-manual", "--as-cran", "--no-multiarch", "--ignore-vignettes"),
+          build_args = c("--no-build-vignettes"), error_on = "warning", check_dir = "check")
         shell: Rscript {0}
 
       # - name: Upload check results
