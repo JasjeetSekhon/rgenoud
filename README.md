@@ -1,3 +1,5 @@
+[![R-CMD-check](https://github.com/JasjeetSekhon/rgenoud/actions/workflows/check-noncontainerized.yaml/badge.svg)](https://github.com/JasjeetSekhon/rgenoud/actions/workflows/check-noncontainerized.yaml)
+
 ## rgenoud: R-GENetic Optimization Using Derivatives (RGENOUD)
 
 Walter R. Mebane, Jr. and Jasjeet S. Sekhon
